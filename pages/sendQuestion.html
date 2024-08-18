@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StackOverflow Q&A Selector</title>
+   
+     <!-- Include jQuery only once -->
+     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+     <!-- Include jQuery UI -->
+     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+ 
+     <!-- Other scripts and stylesheets -->
+     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+
+
+     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+
+
+
+     <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <header>
+        <h1>StackOverflow Q&A Selector</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#" class="active">Send Questions</a></li>
+            <li><a href="#">History</a></li>
+            <li><a href="#">Analysis</a></li>
+        </ul>
+    </nav>
+    <main>
+        <div class="container">
+            <!-- New CSV upload section -->
+             <h3 onclick="showQuery()" class="clickable">Note* - The query should hold the columns as in the query shown (click to see the basic query)</h3>
+            <h3>Load data from CSV file</h3>
+            <div class="csv-upload">
+                
+                <input type="file" id="csvFileInput" accept=".csv">
+                <button disabled id="sendToDB">Send Data to DB</button>
+            </div>
+
+            <h3>Send question & answers to LLM model</h3>
+            <div class="actions">
+
+                <div class="select-model">
+                    <select id="model-select">
+                        <option value="">Select a model</option>
+                        <option value="gemini-1.5">Gemini 1.5</option>
+                        <option value="claude-3.5">Claude 3.5</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
+                        <option value="gpt-4o-mini">GPT-4o</option>
+                    </select>
+                </div>
+
+                <div class="temperature-control">
+                    <label for="temperature-slider">Temperature:</label>
+                    <input type="range" id="temperature-slider" min="0" max="2" step="0.1" value="1">
+                    <span id="temperature-value">1</span>
+                </div>
+                <button class="send-button">Send Selected Questions</button>
+
+                
+            </div>
+            <div class="table-container">
+                <table id="question-table" class="display">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="select-all-checkbox"></th>
+                            <th>SQL ID</th>
+                            <th>Question ID</th>
+                            <th>Title</th>
+                            <th>Creation Date</th>
+                            <th>Score</th>
+                            <th>View Count</th>
+                            <th>Answer Count</th>
+                            <th>Tags</th>
+                            <th>Batch</th>
+                            <th>Model</th>
+                            <th>Temp</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </main>
+
+
+
+
+     <!-- Modal for BatchID input -->
+     <div id="batchIDModal" class="modal">
+        <div class="modal-content">
+            <h3 id="IdentifiedLabel">
+                Identified - <br>
+                Questions: X <br>
+                Answers: X
+            </h3>
+            <hr>
+            <h2>Enter Batch ID</h2>
+            <input type="text" id="batchIDInput">
+            <button id="confirmBatchID">Confirm</button>
+        </div>
+    </div>
+
+    <div id="loading" >
+        <img src="/loading.gif" alt="">
+    </div>
+
+    <div id="BaseQuery">
+        <div id="btnRow">
+            <button onclick="hideQuery()">❌</button>
+            <button title="Copy Query" onclick="copyQuery()">🔗</button>
+        </div>
+        <p id="theQueryText">
+            DECLARE @startQuestionID AS int;
+SET @startQuestionID = 5000000;
+
+DECLARE @numAnswers AS int;
+SET @numAnswers = 5;
+
+DECLARE @MinGoodScore AS float;
+SET @MinGoodScore = 32;
+
+DECLARE @MaxMediumScore AS float;
+SET @MaxMediumScore = 16;
+
+DECLARE @MinMediumScore AS float;
+SET @MinMediumScore = 8;
+
+DECLARE @factor2 AS float;
+DECLARE @factor3 AS float;
+DECLARE @factor4 AS float;
+DECLARE @factor5 AS float;
+
+SET @factor2 = 1.479601;
+SET @factor3 = 2.05682;
+SET @factor4 = 2.823545;
+SET @factor5 = 4.002532;
+
+WITH QuestionsWithExactly5Answers AS (
+  SELECT TOP 1000
+    q.Id AS QId,
+    q.AcceptedAnswerId AS QAcceptedAnswerId,
+    q.CreationDate AS QCreationDate,
+    q.DeletionDate AS QDeletionDate,
+    q.Score AS QScore,
+    q.ViewCount AS QViewCount,
+    q.Body AS QBody,
+    q.OwnerUserId AS QOwnerUserId,
+    q.OwnerDisplayName AS QOwnerDisplayName,
+    q.LastEditorUserId AS QLastEditorUserId,
+    q.LastEditorDisplayName AS QLastEditorDisplayName,
+    q.LastEditDate AS QLastEditDate,
+    q.LastActivityDate AS QLastActivityDate,
+    q.Title AS QTitle,
+    q.Tags AS QTags,
+    q.AnswerCount AS QAnswerCount,
+    q.CommentCount AS QCommentCount,
+    q.FavoriteCount AS QFavoriteCount,
+    q.ClosedDate AS QClosedDate,
+    q.CommunityOwnedDate AS QCommunityOwnedDate,
+    q.ContentLicense AS QContentLicense
+  FROM 
+    Posts q
+  WHERE 
+    q.PostTypeId = 1 -- Questions only
+    AND q.Id > @startQuestionID
+    AND @numAnswers = (SELECT COUNT(*) FROM Posts a WHERE a.ParentId = q.Id AND a.PostTypeId = 2)
+  ORDER BY
+    q.CreationDate
+),
+AnswersWithNormalizedScores AS (
+  SELECT 
+    a.Id AS AId,
+    a.AcceptedAnswerId AS AAcceptedAnswerId,
+    a.CreationDate AS ACreationDate,
+    a.DeletionDate AS ADeletionDate,
+    a.Score AS AScore,
+    a.ParentId AS AParentId,
+    a.ViewCount AS AViewCount,
+    a.Body AS ABody,
+    a.OwnerUserId AS AOwnerUserId,
+    a.OwnerDisplayName AS AOwnerDisplayName,
+    a.LastEditorUserId AS ALastEditorUserId,
+    a.LastEditorDisplayName AS ALastEditorDisplayName,
+    a.LastEditDate AS ALastEditDate,
+    a.LastActivityDate AS ALastActivityDate,
+    a.Title AS ATitle,
+    a.Tags AS ATags,
+    a.AnswerCount AS AAnswerCount,
+    a.CommentCount AS ACommentCount,
+    a.FavoriteCount AS AFavoriteCount,
+    a.ClosedDate AS AClosedDate,
+    a.CommunityOwnedDate AS ACommunityOwnedDate,
+    a.ContentLicense AS AContentLicense,
+    q.*,
+    ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) AS AnswerOrder,
+    CASE 
+      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 1 THEN a.Score
+      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 2 THEN a.Score * @factor2
+      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 3 THEN a.Score * @factor3
+      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 4 THEN a.Score * @factor4
+      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 5 THEN a.Score * @factor5
+    END AS NormalizedScore,
+    CAST(RAND(CHECKSUM(NEWID())) * 1000000 AS INT) AS RandomRank
+  FROM 
+    Posts a
+  INNER JOIN QuestionsWithExactly5Answers q ON a.ParentId = q.QId
+  WHERE 
+    a.PostTypeId = 2 -- Answers only
+),
+LabeledScores AS (
+  SELECT 
+    *,
+    CASE
+      WHEN NormalizedScore <= 0 THEN 'bad'
+      WHEN NormalizedScore > @MinGoodScore THEN 'good'
+      WHEN NormalizedScore BETWEEN @MinMediumScore AND @MaxMediumScore THEN 'medium'
+      ELSE NULL
+    END AS Label,
+    ROW_NUMBER() OVER (PARTITION BY AParentId, 
+                       CASE 
+                         WHEN NormalizedScore <= 0 THEN 'bad'
+                         WHEN NormalizedScore > @MinGoodScore THEN 'good'
+                         WHEN NormalizedScore BETWEEN @MinMediumScore AND @MaxMediumScore THEN 'medium'
+                         ELSE NULL
+                       END
+                       ORDER BY 
+                         CASE 
+                           WHEN NormalizedScore <= 0 THEN NormalizedScore
+                           WHEN NormalizedScore > @MinGoodScore THEN NormalizedScore
+                           ELSE RandomRank
+                         END DESC,
+                         CASE WHEN NormalizedScore <= 0 THEN RandomRank ELSE NULL END
+    ) AS LabelRank
+  FROM 
+    AnswersWithNormalizedScores
+),
+FilteredQuestions AS (
+  SELECT DISTINCT AParentId
+  FROM LabeledScores
+  GROUP BY AParentId
+  HAVING 
+    SUM(CASE WHEN Label = 'bad' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN Label = 'good' THEN 1 ELSE 0 END) > 0
+    AND SUM(CASE WHEN Label = 'medium' THEN 1 ELSE 0 END) > 0
+)
+SELECT TOP 100
+  -- Question fields
+  ls.QId,
+  ls.QAcceptedAnswerId,
+  ls.QCreationDate,
+  ls.QDeletionDate,
+  ls.QScore,
+  ls.QViewCount,
+  ls.QBody,
+  ls.QOwnerUserId,
+  ls.QOwnerDisplayName,
+  ls.QLastEditorUserId,
+  ls.QLastEditorDisplayName,
+  ls.QLastEditDate,
+  ls.QLastActivityDate,
+  ls.QTitle,
+  ls.QTags,
+  ls.QAnswerCount,
+  ls.QCommentCount,
+  ls.QFavoriteCount,
+  ls.QClosedDate,
+  ls.QCommunityOwnedDate,
+  ls.QContentLicense,
+  
+  -- Answer fields
+  ls.AId,
+  ls.AAcceptedAnswerId,
+  ls.ACreationDate,
+  ls.ADeletionDate,
+  ls.AScore,
+  ls.AParentId,
+  ls.AViewCount,
+  ls.ABody,
+  ls.AOwnerUserId,
+  ls.AOwnerDisplayName,
+  ls.ALastEditorUserId,
+  ls.ALastEditorDisplayName,
+  ls.ALastEditDate,
+  ls.ALastActivityDate,
+  ls.ATitle,
+  ls.ATags,
+  ls.AAnswerCount,
+  ls.ACommentCount,
+  ls.AFavoriteCount,
+  ls.AClosedDate,
+  ls.ACommunityOwnedDate,
+  ls.AContentLicense,
+  
+  -- Computed fields
+  ls.AnswerOrder,
+  ls.NormalizedScore,
+  ls.RandomRank,
+  ls.Label,
+  ls.LabelRank
+FROM 
+  LabeledScores ls
+INNER JOIN FilteredQuestions fq ON ls.AParentId = fq.AParentId
+WHERE 
+  ls.Label IS NOT NULL
+  AND (
+    (ls.Label = 'bad' AND ls.LabelRank = 1)
+    OR (ls.Label = 'good' AND ls.LabelRank = 1)
+    OR ls.Label = 'medium'
+  )
+ORDER BY
+  ls.AParentId,
+  CASE ls.Label
+    WHEN 'bad' THEN 1
+    WHEN 'good' THEN 2
+    WHEN 'medium' THEN 3
+  END,
+  ls.NormalizedScore DESC
+        </p>
+    </div>
+    <script src="/script.js"></script>
+</body>
+</html>
