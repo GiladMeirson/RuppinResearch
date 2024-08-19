@@ -24,7 +24,7 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    /* max-width: 1200px; */
     margin: 0 auto;
     background-color: white;
     border-radius: 8px;
@@ -588,12 +588,78 @@ input[type="checkbox"] {
     }
 }
 
-
+.wrapPromptConfig button{
+    padding: 10px 20px;
+    background-color: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
 
 #loading img{
     
     width: 15%;
     /* height: 15%; */
+
+}
+
+.wrapBTN{
+    float: left;
+    font-size: 26px;
+    border-radius: 5px;
+    padding: 10px;
+    cursor: pointer;
+
+}
+.wrapBTN:hover{
+    background-color: rgb(238, 195, 195)
+}
+
+.saveBTN{
+    background-color: var(--secondary-color);
+    color: rgb(217, 217, 217);
+    cursor: pointer;
+    font-size: 26px;
+    border-radius: 5px;
+    padding: 10px;
+}
+.saveBTN:hover{
+    background-color: rgb(233, 244, 185);
+    color: black;
+}
+
+#WrapModalConfig{
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    padding: 25px;
+    text-align: center;
+    display: none;
+}
+#WrapModalConfig h1 {
+    margin-bottom: 15px;
+    color: #000000;
+    background-color: #efefef;
+    width: fit-content;
+    /* text-align: center; */
+    margin-inline: auto;
+    padding-inline: 15px;
+    border-radius: 10px;
+}
+#WrapModalConfig textarea{
+    width: 90%;
+    height: 70%;
+    resize: none;
+    font-size: 20px;
+    padding: 10px;
+    border-radius: 15px;
+    box-shadow: rgba(0, 0, 0, 0.25) 0px 54px 55px, rgba(0, 0, 0, 0.12) 0px -12px 30px, rgba(0, 0, 0, 0.12) 0px 4px 6px, rgba(0, 0, 0, 0.17) 0px 12px 13px, rgba(0, 0, 0, 0.09) 0px -3px 5px;
 
 }
 
@@ -605,6 +671,7 @@ input[type="checkbox"] {
 }
 .clickable{
     cursor: pointer;
+    color: rgb(210, 84, 75);
 }
 .clickable:hover{
     color: var(--hover-color);

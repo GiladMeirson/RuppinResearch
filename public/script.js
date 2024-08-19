@@ -13,6 +13,25 @@ GroupData=[];
 CheckedQuestions=[];
 CurrentJSON_DATA=[];
 CurrentQuestionID_DATA=[];
+PROMPT_WRAP = [
+`You are an AI assistant helping me rank answers to questions asked on StackOverflow.Here is the question: Question ID:`,
+`Question body:`,
+`Here are the answers given to this question:`,
+`Rank these answers from best to worst and add a rating from 1-10 for each one. Return your response in JSON format only, like this:
+[
+    {
+        "answer_index": 1-3,
+        "answer_id": "the id of the answer",
+        "question_id": "the id of the question",
+        "rating": 1-10,
+        "reason": "something"
+    },
+    // ... more answers ...
+]`
+
+
+]
+username = '';
 Q=[];
 DATAtable=null;
 RESULT=[];
@@ -20,8 +39,8 @@ let executionScores = [];
 $(document).ready(function() {
     $('#loading').show();
     GetQuestionApiCall();
-
-
+    username = JSON.parse(localStorage.getItem('user')).username;
+    console.log('current username:', username);
     $('#sendToDB').prop('disabled', true);
 
     //get the score of the executaions from the server.
@@ -37,26 +56,9 @@ $(document).ready(function() {
     });
 
 
-    // Handle "Select All" checkbox
-    $('#select-all-checkbox').on('change', function() {
-        const isChecked = this.checked;
-        
-        // Select/deselect checkboxes on the current page
-        $('.row-checkbox').prop('checked', isChecked);
-        
-        // Select/deselect checkboxes on all pages
-        DATAtable.rows().every(function() {
-            $(this.node()).find('.row-checkbox').prop('checked', isChecked);
-        });
-    });
 
-   // Update "Select All" checkbox state when individual checkboxes change
-   $('#question-table').on('change', '.row-checkbox', function() {
-        const allChecked = DATAtable.rows().nodes().toArray().every(function(tr) {
-            return $(tr).find('.row-checkbox').prop('checked');
-        });
-        $('#select-all-checkbox').prop('checked', allChecked);
-    });
+    DataTableEvent();
+
     // Handle "Send Selected Questions" button
     $('.send-button').on('click', function() {
         const selectedRows = DATAtable.rows().nodes().filter(function(tr) {
@@ -84,7 +86,7 @@ $(document).ready(function() {
             for (let i = 0; i < selectedData.length; i++) {
                 setTimeout(() => {
                     const prompt = generateLLMPrompt(selectedData[i],selectedModel,parseFloat(temperature));
-                    //console.log('Prompt:', prompt);
+                    //console.log('Prompt:', prompt.text);
                     let isLastI = i==selectedData.length-1?true:false;
                     AiAPICall(prompt,isLastI);
 
@@ -96,18 +98,6 @@ $(document).ready(function() {
            
             $.notify("Please select a model and at least one question.", "warn");
         }
-    });
-
-    // Add event listener for row clicks to show question details
-    $('#question-table tbody').on('click', 'tr', function(e) {
-        // Prevent opening details when clicking on the checkbox
-        if ($(e.target).hasClass('row-checkbox')) {
-            return;
-        }
-        console.log('Row clicked'); // Debug log
-
-        const data = DATAtable.row(this).data();
-        showQuestionDetails(data);
     });
 
     // CSV file upload and send to DB
@@ -531,6 +521,29 @@ function GetQuestionByIDArray(QuestionIDArray) {
     return questions;
 }
 
+
+function SaveWrapModalConfig() {
+    const promptText = $('#WrapValue').val();
+    let firstSplited = promptText.split('${questionObject.Id}');
+    const firstPrefix = firstSplited[0];
+    let secondSplited = firstSplited[1].split('${questionBody}');
+    const secondPrefix = secondSplited[0];
+    let thirdSplited = secondSplited[1].split('${Answers}');
+    const thirdPrefix = thirdSplited[0];
+    const fourdPrefix = thirdSplited[1];
+
+    //console.log('FIRST: ',firstPrefix,'SECOND: ',secondPrefix,'THIRD: ',thirdPrefix,'FOURD: ',fourdPrefix);
+    PROMPT_WRAP = [firstPrefix,secondPrefix,thirdPrefix,fourdPrefix];
+    $('#WrapModalConfig').hide();
+    $.notify("The prompt wrapper saved successfully", "success");
+
+
+    
+
+}
+
+
+
 //return a propmt object.
 function generateLLMPrompt(questionObject,modelName,temperature) {
     const questionBody = questionObject.Body.replace(/<[^>]*>/g, '').trim();
@@ -540,29 +553,14 @@ function generateLLMPrompt(questionObject,modelName,temperature) {
         body: answer.Body.replace(/<[^>]*>/g, '').trim()
     }));
 
-    const promptText = `You are an AI assistant helping me rank answers to questions asked on StackOverflow.
+    const promptText = `${PROMPT_WRAP[0]}${questionObject.Id}
+    ${PROMPT_WRAP[1]}
+    ${questionBody}
+    ${PROMPT_WRAP[2]}
+    ${answers.map((answer, index) => `Answer ID: ${answer.id}\nAnswer ${index + 1}:\n${answer.body}`).join('\n\n')}
+    ${PROMPT_WRAP[3]}`;
 
-Here is the question:
-Question ID: ${questionObject.Id}
-Question body:
-${questionBody}
-
-Here are the answers given to this question:
-
-${answers.map((answer, index) => `Answer ID: ${answer.id}\nAnswer ${index + 1}:\n${answer.body}`).join('\n\n')}
-
-Rank these answers from best to worst and add a rating from 1-10 for each one. Return your response in JSON format only, like this:
-[
-    {
-        "answer_index": 1-${answers.length},
-        "answer_id": "the id of the answer",
-        "question_id": "${questionObject.Id}",
-        "rating": 1-10,
-        "reason": "something"
-    },
-    // ... more answers ...
-]`;
-
+    
     const prompt = {
         text: normalizeSpaces(promptText),
         questionId: questionObject.Id,
@@ -570,11 +568,13 @@ Rank these answers from best to worst and add a rating from 1-10 for each one. R
         tokens: normalizeSpaces(promptText).split(/\s+/).length,
         modelName: modelName,
         temperature: temperature,
-        batchName: batchName
+        batchName: batchName,
+        userName: username
     };
 
     return prompt;
 }
+
 
 // Assuming this function exists elsewhere in your code
 function normalizeSpaces(text) {
@@ -692,6 +692,22 @@ function CreateDataTable (QuestionArray){
     if (!$.fn.DataTable.isDataTable('#question-table')) {
         const table = $('#question-table').DataTable({
             data: QuestionArray,
+            columnDefs: [
+                { width: '5%', targets: 0 },  // Checkbox
+                { width: '5%', targets: 1 },  // serialNum
+                { width: '5%', targets: 2 },  // Id
+                { width: '20%', targets: 3 }, // Title
+                { width: '10%', targets: 4 }, // CreationDate
+                { width: '5%', targets: 5 },  // Score
+                { width: '5%', targets: 6 },  // ViewCount
+                { width: '5%', targets: 7 },  // AnswerCount
+                { width: '15%', targets: 8 }, // Tags
+                { width: '10%', targets: 9 }, // BatchName
+                { width: '10%', targets: 10 }, // modelName
+                { width: '5%', targets: 11 }, // temp
+                { width: '2%', targets: 12 }, // tokens
+                { width: '2%', targets: 13 }  // cost
+            ],
             columns: [
             {
                 data: null,
@@ -738,19 +754,32 @@ function CreateDataTable (QuestionArray){
                     return data || '---';
                 }
             },
+            {
+                data:'serialNum',
+                render: function(data) {
+                    return calcTokens(data);
+                }
+            },
+            {
+                data:'serialNum',
+                render: function(data) {
+                    return calcCost(calcTokens(data))+'$';
+                }
+            }
 
         ],
-        order: [[1, 'asc']],
-        createdRow: function(row, data, dataIndex) {
-            $(row).attr('id', `serialNum-${data.serialNum}`);
-            colorRow(data,row);
+            order: [[1, 'asc']],
+            createdRow: function(row, data, dataIndex) {
+                $(row).attr('id', `serialNum-${data.serialNum}`);
+                colorRow(data,row);
 
-         
-        },
-        drawCallback: function() {
+            
+            },
+            drawCallback: function() {
 
-        }
+            }
         });
+
         DATAtable = table;
         DataTableEvent();
 
@@ -771,4 +800,54 @@ function colorRow(data,row){
     else {
         return false;
     }
+}
+
+
+
+function calcTokens(unitQuestSerialNum) {
+    const unitQuest = Q.find(q => q.serialNum == unitQuestSerialNum);
+    const answers = unitQuest.answers;
+    const question = unitQuest;
+    let tokens = 0;
+
+    // Remove <p> tags from question body
+    const cleanedQuestionBody = question.Body.replace(/<\/?p>/g, '');
+    tokens += cleanedQuestionBody.split(/\s+/).length;
+
+    answers.forEach((answer) => {
+        // Remove <p> tags from each answer body
+        const cleanedAnswerBody = answer.Body.replace(/<\/?p>/g, '');
+        tokens += cleanedAnswerBody.split(/\s+/).length;
+    });
+
+    return Math.round(tokens*1.1)+700;
+}
+
+
+function calcCost(tokens,modelName='gpt-4o-mini') {
+    const outputTokensAVG = 1611;
+    let sum = 0;
+
+    if (modelName=='gpt-4o-mini') {
+        const inputCost = tokens / 1000000 * 0.15;
+        const outputCost = outputTokensAVG/1000000 * 0.6;
+        sum = inputCost + outputCost;
+
+    }
+    
+    return sum.toFixed(5);
+  
+
+    
+
+}
+
+
+
+function CloseWrapModalConfig(){
+    $('#WrapModalConfig').hide();
+}
+
+function showWrap() {
+    $('#WrapModalConfig').show();
 }

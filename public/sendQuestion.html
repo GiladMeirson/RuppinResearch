@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StackOverflow Q&A Selector</title>
+    <title>StackOverflow-LLM Research Main</title>
    
      <!-- Include jQuery only once -->
      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -20,7 +20,7 @@
 
      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
      <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
-
+     <link rel="icon" href="/android-chrome-512x512.png" type="image/x-icon">
 
 
      <link rel="stylesheet" href="/style.css">
@@ -49,6 +49,10 @@
 
             <h3>Send question & answers to LLM model</h3>
             <div class="actions">
+
+              <div class="wrapPromptConfig">
+                <button onclick="showWrap()" id="EditwrapPromptConfig">✏️ Edit prompt wrapper</button>
+              </div>
 
                 <div class="select-model">
                     <select id="model-select">
@@ -85,6 +89,8 @@
                             <th>Batch</th>
                             <th>Model</th>
                             <th>Temp</th>
+                            <th>Tokens</th>
+                            <th>Cost</th>
                         </tr>
                     </thead>
                 </table>
@@ -96,7 +102,7 @@
 
 
      <!-- Modal for BatchID input -->
-     <div id="batchIDModal" class="modal">
+    <div id="batchIDModal" class="modal">
         <div class="modal-content">
             <h3 id="IdentifiedLabel">
                 Identified - <br>
@@ -327,6 +333,39 @@ ORDER BY
   ls.NormalizedScore DESC
         </p>
     </div>
+
+
+    <div id="WrapModalConfig">
+      <button class="wrapBTN" onclick="CloseWrapModalConfig()">❌</button>
+      <h1>Edit the prompt:</h1>
+      <textarea name="" id="WrapValue">
+You are an AI assistant helping me rank answers to questions asked on StackOverflow.
+
+Here is the question:
+Question ID: ${questionObject.Id}
+Question body:
+${questionBody}
+
+Here are the answers given to this question:
+
+${Answers}
+
+Rank these answers from best to worst and add a rating from 1-10 for each one. Return your response in JSON format only, like this:
+[
+    {
+        "answer_index": 1-3,
+        "answer_id": "the id of the answer",
+        "question_id": "the id of the question",
+        "rating": 1-10,
+        "reason": "something"
+    },
+    // ... more answers ...
+]
+      </textarea>
+      <br><br>
+      <button class="saveBTN" onclick="SaveWrapModalConfig()">💾 Save</button>
+    </div>
+
     <script src="/script.js"></script>
 </body>
 </html>

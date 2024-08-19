@@ -4,7 +4,6 @@ import {transformQuestionsAndAnswers} from './utils.js';
 
 dotenv.config();
 
-//igroup193_35344	igroup193
 // Configuration object
 const config = {
     user: process.env.DB_USER,
@@ -44,7 +43,7 @@ async function connectToDatabase() {
         console.error('Database connection failed:', err);
     }
 }
-async function executeSpInsertToExecution(questionObjects,batchName,temp) {
+async function executeSpInsertToExecution(questionObjects,batchName,temp,userName) {
     let pool;
     let transaction;
     try {
@@ -69,6 +68,7 @@ async function executeSpInsertToExecution(questionObjects,batchName,temp) {
                 .input('AiExplnation', sql.NVarChar(sql.MAX), questionObject.AiExplnation)
                 .input('ModelName', sql.NVarChar(55), questionObject.modelName)
                 .input('temp', sql.Float, temp)
+                .input('userName', sql.NVarChar(55), userName)
                 .execute('sp_insertToExecution');
             // Clear the inputs for the next iteration
             request.parameters = {};

@@ -8,6 +8,7 @@ import path from 'path';
 import cors from 'cors';
 import Pako from 'pako';
 import { transformData, cleanJsonString } from './utils.js';
+import dotenv from 'dotenv';
 
 import 
 { 
@@ -18,8 +19,8 @@ import
   InsertToAnswer
 } from './DBservices.js';
 
-
-
+//for .env file
+dotenv.config();
 // Assuming the existing code is in the same file or imported here
 // Import the run function and any other necessary components
 
@@ -81,7 +82,7 @@ app.post('/AskAi', async (req, res) => {
       let resultexecute = null;
       if (execuationObj.length > 0) {
         console.log('before executeSpInsertToExecution',execuationObj,fullPromptObject.batchName,temp);
-        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp); // Use the provided function to insert the question object
+        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp,fullPromptObject.userName); // Use the provided function to insert the question object
         console.log('resultexecute',resultexecute);
       }
       res.json({ resultexecute });
@@ -152,6 +153,27 @@ app.post('/insertAnswers', async (req, res) => {
   }
 });
 
+app.post('/Login', async (req, res) => {
+  try {
+    const user = req.body; 
+    if (!user) {
+      return res.status(400).send('No user object provided');
+    }
+
+    if ((user.username == process.env.USER2 || user.username==process.env.USER1)&& user.password == process.env.APP_PASSWORD) {
+      res.json({ result: 'success',user:user });
+    }
+    else {
+      res.json({ result: 'failed',user:user });
+    }
+   
+
+  } 
+  catch (error) {
+    console.error('Failed to login to server: ', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
 
 
 
@@ -185,7 +207,7 @@ app.get('/getAllQuestions', async (req, res) => {
 
 // Optionally, explicitly serve index.html for the root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', '../pages/sendQuestion.html'));
+  res.sendFile(path.join(__dirname, 'public', '../pages/Login.html'));
 });
 
 // Start the server
