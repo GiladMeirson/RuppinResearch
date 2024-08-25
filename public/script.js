@@ -265,6 +265,43 @@ function DataTableEvent(){
 
 }
 
+function parseUniversalDate(dateString) {
+    const parsed = Date.parse(dateString);
+    if (!isNaN(parsed)) {
+        return parsed;
+    }
+
+    const parts = dateString.split(/[-/\s:]/);
+    
+    if (parts.length < 3) {
+        return null;
+    }
+
+    let year, month, day, hours = 0, minutes = 0, seconds = 0;
+
+    if (parts[0].length === 4) {
+        year = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+        day = parseInt(parts[2]);
+    } else {
+        day = parseInt(parts[0]);
+        month = parseInt(parts[1]) - 1;
+        year = parseInt(parts[2]);
+    }
+
+    if (parts.length > 3) {
+        hours = parseInt(parts[3]) || 0;
+        minutes = parseInt(parts[4]) || 0;
+        seconds = parseInt(parts[5]) || 0;
+    }
+
+    return new Date(year, month, day, hours, minutes, seconds).getTime();
+}
+
+
+
+
+
 // Function to show question details
 function showQuestionDetails(question) {
         console.log('showQuestionDetails:', question);
@@ -550,8 +587,8 @@ function GetQuestionByIDArray(QuestionIDArray) {
             questions.push({
                 "Id": question.QId,
                 "AcceptedAnswerId": question.QAcceptedAnswerId,
-                "CreationDate": question.QCreationDate,
-                "DeletionDate": question.QDeletionDate,
+                "CreationDate":parseUniversalDate(question.QCreationDate),
+                "DeletionDate": parseUniversalDate(question.QDeletionDate),
                 "Score": question.QScore,
                 "ViewCount": question.QViewCount,
                 "Body": question.QBody,
@@ -559,20 +596,20 @@ function GetQuestionByIDArray(QuestionIDArray) {
                 "OwnerDisplayName": question.QOwnerDisplayName,
                 "LastEditorUserId": question.QLastEditorUserId,
                 "LastEditorDisplayName": question.QLastEditorDisplayName,
-                "LastEditDate": question.QLastEditDate,
-                "LastActivityDate": question.QLastActivityDate,
+                "LastEditDate": parseUniversalDate(question.QLastEditDate),
+                "LastActivityDate": parseUniversalDate(question.QLastActivityDate),
                 "Title": question.QTitle,
                 "Tags": question.QTags,
                 "AnswerCount": question.QAnswerCount,
                 "CommentCount": question.QCommentCount,
                 "FavoriteCount": question.QFavoriteCount,
-                "ClosedDate": question.QClosedDate,
-                "CommunityOwnedDate": question.QCommunityOwnedDate,
+                "ClosedDate": parseUniversalDate(question.QClosedDate),
+                "CommunityOwnedDate": parseUniversalDate(question.QCommunityOwnedDate),
                 "ContentLicense": question.QContentLicense,
             });
 
 
-            //														
+            														
         }
     
         
@@ -771,16 +808,16 @@ function NormalizeAnswers(answers,batchname) {
         const answer = {
             Id: item.AId,
             ParentId: item.AParentId,
-            CreationDate: item.ACreationDate,
-            DeletionDate: item.ADeletionDate,
+            CreationDate: parseUniversalDate(item.ACreationDate),
+            DeletionDate: parseUniversalDate(item.ADeletionDate),
             Score: item.AScore,
             Body: item.ABody,
             OwnerUserId: item.AOwnerUserId,
             OwnerDisplayName: item.AOwnerDisplayName,
             LastEditorUserId: item.ALastEditorUserId,
             LastEditorDisplayName: item.ALastEditorDisplayName,
-            LastEditDate: item.ALastEditDate,
-            LastActivityDate: item.ALastActivityDate,
+            LastEditDate: parseUniversalDate(item.ALastEditDate),
+            LastActivityDate: parseUniversalDate(item.ALastActivityDate),
             CommentCount: item.ACommentCount,
             ContentLicense: item.AContentLicense,
             AnswerOrder: item.AnswerOrder,
@@ -789,7 +826,7 @@ function NormalizeAnswers(answers,batchname) {
             NormalizedScore: item.NormalizedScore,
             BatchName: batchname,
             ViewCount: item.AViewCount,
-            ClosedDate: item.AClosedDate,
+            ClosedDate: parseUniversalDate(item.AClosedDate),
 
         };
         answersObjects.push(answer);
@@ -834,7 +871,7 @@ function CreateDataTable (QuestionArray){
             { 
                 data: 'CreationDate',
                 render: function(data) {
-                    return new Date(data).toLocaleDateString();
+                    return new Date(parseInt(data)).toLocaleDateString();
                 }
             },
             { data: 'Score' },
