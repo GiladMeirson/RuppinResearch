@@ -8,11 +8,16 @@ const GET_URL_ALL_EXECUTION_SCORES = prefix+'/getAllExecutionScores';
 const POST_URL_INSERT_QUESTIONS = prefix+'/insertQuestions';
 const GET_URL_ALL_QUESTIONS = prefix+'/getAllQuestions';
 const POST_URL_INSERT_ANSWERS = prefix+'/insertAnswers';
+const POST_URL_INSERT_PROMPT = prefix+'/SavePrompt';
+const GET_URL_ALL_PROMPT_LIST = prefix+'/getAllPrompt';
+
+const DELAY_REQUEST = 5000; // 5 seconds per request of LLM model to the server.
 
 GroupData=[];
 CheckedQuestions=[];
 CurrentJSON_DATA=[];
 CurrentQuestionID_DATA=[];
+PROMPT_LIST=[];
 PROMPT_WRAP = [
 `You are an AI assistant helping me rank answers to questions asked on StackOverflow.Here is the question: Question ID:`,
 `Question body:`,
@@ -31,6 +36,8 @@ PROMPT_WRAP = [
 
 
 ]
+CurrentPromptId = null;
+PROMPT_TEXT_BEFORE_TRIM=``;
 username = '';
 Q=[];
 DATAtable=null;
@@ -39,6 +46,7 @@ let executionScores = [];
 $(document).ready(function() {
     $('#loading').show();
     GetQuestionApiCall();
+    getAllPromptList();
     username = JSON.parse(localStorage.getItem('user')).username;
     console.log('current username:', username);
     $('#sendToDB').prop('disabled', true);
@@ -90,7 +98,7 @@ $(document).ready(function() {
                     let isLastI = i==selectedData.length-1?true:false;
                     AiAPICall(prompt,isLastI);
 
-                }, 5000 * i);
+                }, DELAY_REQUEST * i);
             }
 
 
@@ -244,7 +252,7 @@ function DataTableEvent(){
 
     
     // Add event listener for row clicks to show question details
-    $('#question-table tbody').on('click', 'tr', function(e) {
+    $('#question-table tbody').on('click', 'td.title', function(e) {
         // Prevent opening details when clicking on the checkbox
         if ($(e.target).hasClass('row-checkbox')) {
             return;
@@ -397,6 +405,57 @@ function csvToJson(csvString) {
     return result;
 }
 
+function getAllPromptList() {
+    $('#loading').show();
+    //ajax to get all the prompts from the server.
+    $.ajax({
+        url: GET_URL_ALL_PROMPT_LIST,
+        method: 'GET',
+        success: function(response) {
+            console.log('AJAX call successful:', response);
+            PROMPT_LIST = response.promptsList;
+            
+            // Handle the response here
+            $('#loading').hide();
+            renderToPromptSelect();
+            
+        },
+        error: function(error) {
+            console.error('AJAX call failed:', error);
+            $('#loading').hide();
+            // Handle the error here
+        }
+    });
+}
+
+function renderToPromptSelect(){
+    if (PROMPT_LIST.length>0) {
+        $('#PromptList').html(`<option value="-1">NEW PROMPT</option>`)
+        for (let i = 0; i < PROMPT_LIST.length; i++) {
+            const prompt = PROMPT_LIST[i];
+            $('#PromptList').append(`<option value="${prompt.PromptID}">${prompt.PromptName}</option>`);
+
+            
+        }
+        
+        $('#PromptList').val(PROMPT_LIST[PROMPT_LIST.length - 1].PromptID);
+        $('#WrapValue').val(PROMPT_LIST[PROMPT_LIST.length - 1].PromptTemplate);
+        CurrentPromptId = PROMPT_LIST[PROMPT_LIST.length - 1].PromptID;
+        
+    }
+}
+
+function renderTextArea(select){
+    //console.log('select:',select.value);
+
+    const selectID = parseInt(select.value);
+    if (selectID!=-1) {
+        const prompt = PROMPT_LIST.find(p => p.PromptID == selectID);
+        $('#WrapValue').val(prompt.PromptTemplate);
+        CurrentPromptId = selectID;
+    }
+
+}
 
 // Shuffle function
 function shuffleArray(array) {
@@ -524,6 +583,7 @@ function GetQuestionByIDArray(QuestionIDArray) {
 
 function SaveWrapModalConfig() {
     const promptText = $('#WrapValue').val();
+    PROMPT_TEXT_BEFORE_TRIM = promptText;
     let firstSplited = promptText.split('${questionObject.Id}');
     const firstPrefix = firstSplited[0];
     let secondSplited = firstSplited[1].split('${questionBody}');
@@ -533,16 +593,66 @@ function SaveWrapModalConfig() {
     const fourdPrefix = thirdSplited[1];
 
     //console.log('FIRST: ',firstPrefix,'SECOND: ',secondPrefix,'THIRD: ',thirdPrefix,'FOURD: ',fourdPrefix);
+
+    if ($('#PromptList').val()=='-1') {
+        $('#nameOfThePrmpt').show();
+    }
+    else{
+        CurrentPromptId = parseInt($('#PromptList').val());
+        $.notify("The prompt wrapper saved successfully", "success");
+        $('#WrapModalConfig').hide();
+
+    }
     PROMPT_WRAP = [firstPrefix,secondPrefix,thirdPrefix,fourdPrefix];
-    $('#WrapModalConfig').hide();
-    $.notify("The prompt wrapper saved successfully", "success");
+    
+    // $('#WrapModalConfig').hide();
+    // $.notify("The prompt wrapper saved successfully", "success");
 
 
     
 
 }
 
+function savePromptToDB() {
+    $('#loading').show();
+    //PROMPT_WRAP - the prompt value !.
+    //username - the username of the user.
+    const promptName = $('#promptName').val();
+    console.log(PROMPT_TEXT_BEFORE_TRIM,username,promptName)
 
+    
+    const prompt = {
+        text: PROMPT_TEXT_BEFORE_TRIM,
+        username: username,
+        promptName: promptName
+    };
+    //ajax to save the prompt to the server.
+    $.ajax({
+        url: POST_URL_INSERT_PROMPT,
+        method: 'POST',
+        data: JSON.stringify(prompt),
+        contentType: 'application/json',
+        success: function(response) {
+            console.log('AJAX call successful:', response);
+            // Handle the response here
+            $('#nameOfThePrmpt').hide();
+            $('#WrapModalConfig').hide();
+            $('#loading').hide();
+            $.notify("The prompt saved successfully", "success");
+            CurrentPromptId = response.result.res[0].NewPromptId;
+
+        },
+        error: function(error) {
+            console.error('AJAX call failed:', error);
+            // Handle the error here
+            $('#nameOfThePrmpt').hide();
+            $('#WrapModalConfig').hide();
+            $('#loading').hide();
+            $.notify("Error at save prompt - check the console", "error");
+        }
+    });
+    
+}
 
 //return a propmt object.
 function generateLLMPrompt(questionObject,modelName,temperature) {
@@ -569,7 +679,8 @@ function generateLLMPrompt(questionObject,modelName,temperature) {
         modelName: modelName,
         temperature: temperature,
         batchName: batchName,
-        userName: username
+        userName: username,
+        promptID: CurrentPromptId
     };
 
     return prompt;
@@ -608,21 +719,21 @@ function copyToClipboard(text) {
 
 
 
-function normalizeSpaces(str) {
-    // Step 1: Trim leading and trailing spaces
-    str = str.trim();
+// function normalizeSpaces(str) {
+//     // Step 1: Trim leading and trailing spaces
+//     str = str.trim();
     
-    // Step 2: Replace multiple spaces with a single space
-    str = str.replace(/\s+/g, ' ');
+//     // Step 2: Replace multiple spaces with a single space
+//     str = str.replace(/\s+/g, ' ');
     
-    // Step 3: Ensure space after punctuation if followed by a word character
-    str = str.replace(/([.,!?:;])\s*(\w)/g, '$1 $2');
+//     // Step 3: Ensure space after punctuation if followed by a word character
+//     str = str.replace(/([.,!?:;])\s*(\w)/g, '$1 $2');
     
-    // Step 4: Remove space before punctuation
-    str = str.replace(/\s+([.,!?:;])/g, '$1');
+//     // Step 4: Remove space before punctuation
+//     str = str.replace(/\s+([.,!?:;])/g, '$1');
     
-    return str;
-}
+//     return str;
+// }
 
 
 
@@ -763,7 +874,7 @@ function CreateDataTable (QuestionArray){
             {
                 data:'serialNum',
                 render: function(data) {
-                    return calcCost(calcTokens(data))+'$';
+                    return calcCost(calcTokens(data))+'¢';
                 }
             }
 
@@ -771,6 +882,7 @@ function CreateDataTable (QuestionArray){
             order: [[1, 'asc']],
             createdRow: function(row, data, dataIndex) {
                 $(row).attr('id', `serialNum-${data.serialNum}`);
+                $(row).find('td:eq(3)').addClass('title');
                 colorRow(data,row);
 
             
@@ -832,10 +944,12 @@ function calcCost(tokens,modelName='gpt-4o-mini') {
         const inputCost = tokens / 1000000 * 0.15;
         const outputCost = outputTokensAVG/1000000 * 0.6;
         sum = inputCost + outputCost;
+        
 
     }
     
-    return sum.toFixed(5);
+    sum=sum*100;
+    return sum.toFixed(4);
   
 
     

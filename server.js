@@ -16,7 +16,9 @@ import
   getAllExecutionScores,
   InsertToQuestion,
   getAllQuestions,
-  InsertToAnswer
+  InsertToAnswer,
+  InsertPromptToDB,
+  getAllPrompts
 } from './DBservices.js';
 
 //for .env file
@@ -52,7 +54,9 @@ app.post('/AskAi', async (req, res) => {
   
     try {
       const inputText = req.body.text;
+      
       const fullPromptObject = req.body.prompt; // Assuming the input text is sent in the body with key 'text'
+      const promptID = fullPromptObject.promptID;
       if (!inputText) {
         return res.status(400).send('No text provided');
       }
@@ -81,8 +85,8 @@ app.post('/AskAi', async (req, res) => {
       // pass the batchName 
       let resultexecute = null;
       if (execuationObj.length > 0) {
-        console.log('before executeSpInsertToExecution',execuationObj,fullPromptObject.batchName,temp);
-        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp,fullPromptObject.userName); // Use the provided function to insert the question object
+        console.log('before executeSpInsertToExecution',execuationObj,fullPromptObject.batchName,temp,promptID);
+        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp,fullPromptObject.userName,promptID); // Use the provided function to insert the question object
         console.log('resultexecute',resultexecute);
       }
       res.json({ resultexecute });
@@ -98,6 +102,22 @@ app.post('/AskAi', async (req, res) => {
   
 
  
+});
+
+app.post('/SavePrompt', async (req, res) => {
+  
+    try {
+      const promptObject = req.body; // Assuming the question object is sent in the body
+      if (!promptObject) {
+        return res.status(400).send('No prompt object provided');
+      }
+      const result = await InsertPromptToDB(promptObject); 
+      res.json({ result });
+  
+    } catch (error) {
+      console.error('Error inserting Prompt:', error);
+      res.status(500).send('Internal Server Error Prompt');
+    }
 });
 
 
@@ -176,7 +196,16 @@ app.post('/Login', async (req, res) => {
 });
 
 
-
+app.get('/getAllPrompt', async (req, res) => {
+  try {
+    const promptsList = await getAllPrompts(); // Use the provided function to get all prompts
+    res.json({ promptsList });
+  } 
+  catch (error) {
+    console.error('Error retrieving prompts:', error);
+    res.status(500).send('Internal Server Error getAllPrompt');
+  }
+});
 
 
 // GET route to retrieve all execution scores from the database

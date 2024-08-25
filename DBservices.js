@@ -43,7 +43,7 @@ async function connectToDatabase() {
         console.error('Database connection failed:', err);
     }
 }
-async function executeSpInsertToExecution(questionObjects,batchName,temp,userName) {
+async function executeSpInsertToExecution(questionObjects,batchName,temp,userName,promptID) {
     let pool;
     let transaction;
     try {
@@ -69,6 +69,7 @@ async function executeSpInsertToExecution(questionObjects,batchName,temp,userNam
                 .input('ModelName', sql.NVarChar(55), questionObject.modelName)
                 .input('temp', sql.Float, temp)
                 .input('userName', sql.NVarChar(55), userName)
+                .input('promptID', sql.Int, promptID)
                 .execute('sp_insertToExecution');
             // Clear the inputs for the next iteration
             request.parameters = {};
@@ -329,8 +330,76 @@ export async function getAllQuestions(){
     }
 }
 
+export async function InsertPromptToDB(promptObject) {
+    let pool;
+    let transaction;
+    try {
+        pool = await sql.connect(config);
+        console.log('Connected to the database');
 
+        // Start a transaction
+        transaction = new sql.Transaction(pool);
+        await transaction.begin();
 
+        const request = new sql.Request(transaction);
+
+        // Process each object in the array
+        const result = await request
+            .input('PromptTemplate', sql.NVarChar(sql.MAX), promptObject.text)
+            .input('PromptName', sql.NVarChar(55), promptObject.promptName)
+            .input('UserName', sql.NVarChar(55), promptObject.username)
+            .execute('spInsertToPrompt');
+
+        // Commit the transaction
+        await transaction.commit();
+        console.log('All inserts committed successfully - Prompt !');
+
+        // Close the connection
+        await sql.close();
+        
+        return { success: true, message: 'All records inserted successfully',res:result.recordset };
+    } catch (err) {
+        console.error('Database spInsertPrompt operation failed:', err);
+        
+        // If there's an error, roll back the transaction
+        if (transaction) {
+            await transaction.rollback();
+            console.log('Transaction rolled back due to error');
+        }
+        
+        // Make sure to close the connection even if there's an error
+        if (pool) {
+            await sql.close();
+        }
+        
+        throw err;  // Re-throw the error for the caller to handle
+    }
+}
+
+export async function getAllPrompts() {
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request().execute('spGetAllPrompts');
+        
+        const prompts = result.recordset.map(row => ({
+            PromptID: row.Id,
+            PromptTemplate: row.PromptTemplate,
+            PromptName: row.PromptName,
+            UserName: row.UserName,
+            Date: row.Timestamp
+        }));
+
+        return prompts;
+    } catch (err) {
+        console.error('Error in getAllPrompts DBservices --> ', err);
+        throw err;
+    } finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
 
 
 

@@ -89,8 +89,8 @@
                             <th>Batch</th>
                             <th>Model</th>
                             <th>Temp</th>
-                            <th>Tokens</th>
-                            <th>Cost</th>
+                            <th>~ Tokens</th>
+                            <th>~ Cost</th>
                         </tr>
                     </thead>
                 </table>
@@ -338,6 +338,12 @@ ORDER BY
     <div id="WrapModalConfig">
       <button class="wrapBTN" onclick="CloseWrapModalConfig()">❌</button>
       <h1>Edit the prompt:</h1>
+      <div class="promptListClassDiv">
+        <select onchange="renderTextArea(this)" class="promptListClass" name="PromptList" id="PromptList">
+          <option value="-1">NEW PROMPT</option>
+        </select>
+      </div>
+
       <textarea name="" id="WrapValue">
 You are an AI assistant helping me rank answers to questions asked on StackOverflow.
 
@@ -364,6 +370,15 @@ Rank these answers from best to worst and add a rating from 1-10 for each one. R
       </textarea>
       <br><br>
       <button class="saveBTN" onclick="SaveWrapModalConfig()">💾 Save</button>
+    </div>
+
+    <div id="nameOfThePrmpt" class="modal">
+      <div class="modal-content">
+        <h3>Enter the name of the prompt</h3>
+        <input type="text" id="promptName">
+        <button onclick="savePromptToDB()" class="btnStyle" id="confirmPromptName">Confirm</button>
+      </div>
+
     </div>
 
     <script src="/script.js"></script>

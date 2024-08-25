@@ -588,7 +588,7 @@ input[type="checkbox"] {
     }
 }
 
-.wrapPromptConfig button{
+.wrapPromptConfig button , .btnStyle{
     padding: 10px 20px;
     background-color: var(--secondary-color);
     color: white;
@@ -604,6 +604,23 @@ input[type="checkbox"] {
     width: 15%;
     /* height: 15%; */
 
+}
+
+.promptListClassDiv{
+    margin-block: 15px;
+
+}
+.promptListClass{
+    padding: 5px;
+    font-size: 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-inline: 5px;
+    background-color: #f8f9fa;
+    width:auto
+}
+.promptListClass option{
+    padding: 5px;
 }
 
 .wrapBTN{
@@ -675,6 +692,10 @@ input[type="checkbox"] {
 }
 .clickable:hover{
     color: var(--hover-color);
+}
+td.title:hover {
+    cursor: pointer;
+    background-color: #86b3eea3
 }
 
 #BaseQuery{
