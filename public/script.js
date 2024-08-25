@@ -299,7 +299,25 @@ function parseUniversalDate(dateString) {
 }
 
 
-
+function limitToThreeOccurrences(arr) {
+    const occurrences = {};
+    const result = [];
+  
+    for (const item of arr) {
+      const qId = item.QId;
+      
+      if (!occurrences[qId]) {
+        occurrences[qId] = 0;
+      }
+  
+      if (occurrences[qId] < 3) {
+        result.push(item);
+        occurrences[qId]++;
+      }
+    }
+  
+    return result;
+}
 
 
 // Function to show question details
@@ -439,7 +457,7 @@ function csvToJson(csvString) {
       }
     }
   
-    return result;
+    return limitToThreeOccurrences(result);
 }
 
 function getAllPromptList() {
