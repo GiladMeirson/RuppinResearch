@@ -54,6 +54,7 @@ app.post('/AskAi', async (req, res) => {
   
     try {
       const inputText = req.body.text;
+      const runID = req.body.RunId;
       
       const fullPromptObject = req.body.prompt; // Assuming the input text is sent in the body with key 'text'
       const promptID = fullPromptObject.promptID;
@@ -85,15 +86,15 @@ app.post('/AskAi', async (req, res) => {
       // pass the batchName 
       let resultexecute = null;
       if (execuationObj.length > 0) {
-        console.log('before executeSpInsertToExecution',execuationObj,fullPromptObject.batchName,temp,promptID);
-        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp,fullPromptObject.userName,promptID); // Use the provided function to insert the question object
-        console.log('resultexecute',resultexecute);
+        //console.log('before executeSpInsertToExecution',execuationObj,fullPromptObject.batchName,temp,promptID);
+        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp,fullPromptObject.userName,promptID,runID); // Use the provided function to insert the question object
+        //console.log('resultexecute',resultexecute);
       }
       res.json({ resultexecute });
   
     } catch (error) {
       console.error('Error processing string:', error);
-      res.status(500).send('Internal Server Error');
+      res.status(500).send({errorName:'Internal Server Error',err:error});
     }
  
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StackOverflow-LLM Research Main</title>
+    <title>StackExchange-LLM Research Main</title>
    
      <!-- Include jQuery only once -->
      <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -27,7 +27,9 @@
 </head>
 <body>
     <header>
-        <h1>StackOverflow Q&A Selector</h1>
+      
+        <!-- <h1>StackBrain</h1> -->
+        <img class="mainLogo" src="/logo.jpeg" alt="">
     </header>
     <nav>
         <ul>
@@ -44,7 +46,7 @@
             <div class="csv-upload">
                 
                 <input type="file" id="csvFileInput" accept=".csv">
-                <button disabled id="sendToDB">Send Data to DB</button>
+                <button disabled id="sendToDB">Upload CSV to DB</button>
             </div>
 
             <h3>Send question & answers to LLM model</h3>
@@ -58,7 +60,6 @@
                     <select id="model-select">
                         <option value="">Select a model</option>
                         <option value="gemini-1.5">Gemini 1.5</option>
-                        <option value="claude-3.5">Claude 3.5</option>
                         <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
                         <option value="gpt-4o-mini">GPT-4o</option>
                     </select>
@@ -97,6 +98,18 @@
             </div>
         </div>
     </main>
+
+
+    <footer>
+      <div class="footer-content">
+        <p>&copy; 2024 <a target="_blank" href="https://www.linkedin.com/in/benny-bornfeld-phd-4b6357?lipi=urn%3Ali%3Apage%3Ad_flagship3_profile_view_base_contact_details%3BwxMoKMZAS%2F%2BDfldt8AcJ4w%3D%3D">Benny Bornfeld Ph.D.</a>  created by <a target="_blank" href="https://giladmeirson.site/">Gilad Meirson B.Sc.</a>  All rights reserved.</p>
+        <nav class="footerNav">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Use</a>
+          <a href="#">Contact Us</a>
+        </nav>
+      </div>
+    </footer>
 
 
 
@@ -379,6 +392,26 @@ Rank these answers from best to worst and add a rating from 1-10 for each one. R
         <button onclick="savePromptToDB()" class="btnStyle" id="confirmPromptName">Confirm</button>
       </div>
 
+    </div>
+
+    <div class="modal" id="modalBeforeSendQuestions">
+      <div id="modalOfConc" class="modal-content">
+        <h1 id="modelTitleh1">The choosen model : *******</h1>
+        <h3 id="QuestAmountTitle">You are going to send XX questions</h3>
+        <h3>Select delay in seconds</h3>
+        <input type="number" id="delayInSeconds" value="5" step="0.5">
+        <h3>choose any unique run Id</h3>
+        <input style="cursor: pointer;" ondblclick="generateKey(this)" type="text" id="RunIdIN">
+        <h3 id="costTitleh3">The cost of this run: $50</h3>
+        <button id="sendToLLMBTN" class="send-button">CONFIRM</button>
+        <button onclick="closeConModal()" class="cancel-button">CANCEL</button>
+      </div>
+    </div>
+
+    <div id="counterModal" class="modal">
+      <div id="contentCounter" class="modal-content">
+        <h1>Questions sent: <span id="counterSpanSent">0</span> / <span id="QuestionLengthSpan">0</span></h1>
+      </div>
     </div>
 
     <script src="/script.js"></script>

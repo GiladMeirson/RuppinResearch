@@ -43,7 +43,7 @@ async function connectToDatabase() {
         console.error('Database connection failed:', err);
     }
 }
-async function executeSpInsertToExecution(questionObjects,batchName,temp,userName,promptID) {
+async function executeSpInsertToExecution(questionObjects,batchName,temp,userName,promptID,runID) {
     let pool;
     let transaction;
     try {
@@ -70,6 +70,7 @@ async function executeSpInsertToExecution(questionObjects,batchName,temp,userNam
                 .input('temp', sql.Float, temp)
                 .input('userName', sql.NVarChar(55), userName)
                 .input('promptID', sql.Int, promptID)
+                .input('RunId', sql.NVarChar(55), runID)
                 .execute('sp_insertToExecution');
             // Clear the inputs for the next iteration
             request.parameters = {};

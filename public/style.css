@@ -108,6 +108,19 @@ nav ul li a.active {
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+.cancel-button{
+    padding: 10px 20px;
+    background-color: #ca6666;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.cancel-button:hover{
+    background-color: #ed9393;
+}
 
 .send-button:hover {
     background-color: var(--hover-color);
@@ -547,8 +560,11 @@ input[type="checkbox"] {
     margin-bottom: 15px;
     color: var(--primary-color);
 }
+#modalOfConc{
+    width: 45%;
+}
 
-.modal-content input[type="text"] {
+.modal-content input[type="text"],.modal-content input[type="number"] {
     width: 100%;
     padding: 10px;
     margin-bottom: 15px;
@@ -597,6 +613,12 @@ input[type="checkbox"] {
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+}
+.mainLogo{
+    width: 10%;
+    height: 100%;
+    margin: 0 auto;
+    display: block;
 }
 
 #loading img{
@@ -718,3 +740,51 @@ td.title:hover {
 
 }
 
+#contentCounter{
+    width: 50% ;
+}
+
+
+
+/* footerfooterfooterfooterfooterfooterfooterfooterfooterfooterfooter */
+
+
+
+footer {
+    margin-top: 25px;
+    background-color: #f8f9fa;
+    padding: 20px 0;
+    font-family: Arial, sans-serif;
+    border-top: 1px solid #e5e5e5;  /* Added border for separation */
+
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
+  }
+
+  .footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+  }
+
+  footer p {
+    margin: 0;
+    color: #6c757d;
+  }
+
+  footer nav a {
+    color: #6c757d;
+    text-decoration: none;
+    margin-left: 20px;
+    transition: color 0.3s ease;
+  }
+
+  footer nav a:hover {
+    color: #343a40;
+  }
+
+ footer .footerNav {
+    margin-bottom: 0px;
+ }

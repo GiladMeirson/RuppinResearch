@@ -11,7 +11,7 @@ const POST_URL_INSERT_ANSWERS = prefix+'/insertAnswers';
 const POST_URL_INSERT_PROMPT = prefix+'/SavePrompt';
 const GET_URL_ALL_PROMPT_LIST = prefix+'/getAllPrompt';
 
-const DELAY_REQUEST = 5000; // 5 seconds per request of LLM model to the server.
+DELAY_REQUEST = 5000; // 5 seconds per request of LLM model to the server.
 
 GroupData=[];
 CheckedQuestions=[];
@@ -91,15 +91,41 @@ $(document).ready(function() {
             
             // here we need to make a timeout to send request of each question to ai api by the model name.
             $('#loading').show();
-            for (let i = 0; i < selectedData.length; i++) {
-                setTimeout(() => {
-                    const prompt = generateLLMPrompt(selectedData[i],selectedModel,parseFloat(temperature));
-                    //console.log('Prompt:', prompt.text);
-                    let isLastI = i==selectedData.length-1?true:false;
-                    AiAPICall(prompt,isLastI);
+            RendderToConfirmModal(selectedModel,selectedData)
+            $('#modalBeforeSendQuestions').show();
 
-                }, DELAY_REQUEST * i);
-            }
+            $('#sendToLLMBTN').on('click', function() {
+                // console.log($('#RunIdIN').val());
+                // console.log($('#delayInSeconds').val());
+                // console.log('Selected Model:', selectedModel);
+                // console.log('Temperature:', temperature);
+                // console.log('Selected Questions:', selectedData);
+                DELAY_REQUEST = parseFloat($('#delayInSeconds').val())*1000;
+                const RunId = $('#RunIdIN').val();
+                if (RunId=='') {
+                    $.notify("Please enter a Run ID.", "warn");
+                    return;
+                }
+                if (CurrentPromptId==null) {
+                    $.notify("Please save the prompt before sending the questions.", "warn");
+                    return;
+                    
+                }
+                $('#modalBeforeSendQuestions').hide();
+                $('#counterModal').show();
+                $('#QuestionLengthSpan').html(selectedData.length);
+                for (let i = 0; i < selectedData.length; i++) {
+                    setTimeout(() => {
+                        const prompt = generateLLMPrompt(selectedData[i],selectedModel,parseFloat(temperature));
+                        //console.log('Prompt:', prompt.text);
+                        let isLastI = i==selectedData.length-1?true:false;
+                        AiAPICall(prompt,isLastI,RunId,i);
+
+                    }, DELAY_REQUEST * i);
+                }
+            });
+            
+ 
 
 
         } else {
@@ -227,6 +253,41 @@ $(document).ready(function() {
 
 });
 
+
+
+
+function generateKey(input) {
+    const timestamp = Date.now();
+    let strNum = timestamp.toString();
+    let chars = ``;
+    for (let i = 0; i < 4; i++) {
+        const random = 97 + Math.floor(Math.random() * 26);
+        chars+=String.fromCharCode(random);
+    }
+    strNum = strNum.slice(-6);
+    strNum += chars;
+    input.value = strNum;
+}
+
+function RendderToConfirmModal(modelName,questionArray) {
+    $('#modelTitleh1').html(`The choosen model : ${modelName}`);
+    let sumOftokens=0;
+    questionArray.forEach((item, index) => {
+        sumOftokens+=calcTokens(item.serialNum);
+    });
+    
+    const cost = calcCost(sumOftokens,modelName);
+    //console.log('sumOftokens:',sumOftokens,modelName,cost);
+    $('#costTitleh3').html(`The cost of this run: ${cost}¢`);
+    $('#QuestAmountTitle').html(`You are going to send ${questionArray.length} questions`);
+}
+
+
+
+function closeConModal() {
+    $('#modalBeforeSendQuestions').hide();
+    $('#loading').hide();
+}
 
 function DataTableEvent(){
       // Handle "Select All" checkbox
@@ -539,16 +600,17 @@ function splitQuestionAndAnswers(data) {
 }
 
 
-function AiAPICall(prompt,isLast) {
+function AiAPICall(prompt,isLast,RunId,i) {
     const request =
     {
+        RunId: RunId,
         text: prompt.text,
         model:prompt.modelName,
         temp:prompt.temperature,
         prompt: prompt
     };
-
-    console.log('Sending request:',POST_URL_AskAi, request);
+    $('#loading').show();
+    //console.log('Sending request:',POST_URL_AskAi, request);
     $.ajax({
         url: POST_URL_AskAi,
         method: 'POST',
@@ -556,6 +618,7 @@ function AiAPICall(prompt,isLast) {
         contentType: 'application/json',
         success: function(response) {
             console.log('AJAX call successful:', response);
+            $('#counterSpanSent').html(i+1);
             // Handle the response here
             //response.result.temperature = prompt.temperature;
 
@@ -1001,6 +1064,14 @@ function calcCost(tokens,modelName='gpt-4o-mini') {
         sum = inputCost + outputCost;
         
 
+    }
+    if (modelName=='gemini-1.5') {
+        return 0;
+    }
+    if (modelName=='gpt-3.5-turbo') {
+        const inputCost = tokens / 1000000 * 0.5;
+        const outputCost = outputTokensAVG/1000000 * 1.5;
+        sum = inputCost + outputCost
     }
     
     sum=sum*100;

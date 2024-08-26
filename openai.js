@@ -33,7 +33,7 @@ export async function AskOpenAI(inputText,temp=1,modelN) {
       }
     ],
     temperature: temp,
-    max_tokens: 256,
+    max_tokens: 8192,
     top_p: 0.01,
     frequency_penalty: 0,
     presence_penalty: 0,
