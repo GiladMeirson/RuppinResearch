@@ -298,9 +298,13 @@ function DataTableEvent(){
         $('.row-checkbox').prop('checked', isChecked);
         
         // Select/deselect checkboxes on all pages
-        DATAtable.rows().every(function() {
-            $(this.node()).find('.row-checkbox').prop('checked', isChecked);
-        });
+        // DATAtable.rows().every(function() {
+        //     $(this.node()).find('.row-checkbox').prop('checked', isChecked);
+        // });
+
+
+        // this is the correct way to select all the checkboxes in the table.
+        DATAtable.rows({ search: 'applied' }).nodes().to$().find('.row-checkbox').prop('checked', isChecked);
     });
 
    // Update "Select All" checkbox state when individual checkboxes change
