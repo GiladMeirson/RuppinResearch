@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>StackExchange-LLM Research History</title>
+       
+         <!-- Include jQuery only once -->
+         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+         <!-- Include jQuery UI -->
+         <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+         <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+     
+         <!-- Other scripts and stylesheets -->
+         <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+         <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+    
+         <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+    
+    
+         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+         <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+         <link rel="icon" href="/android-chrome-512x512.png" type="image/x-icon">
+         <link rel="stylesheet" href="/style.css">
+         <script src="/history.js"></script>
+         
+    </head>
+<body>
+    <header>
+      
+        <!-- <h1>StackBrain</h1> -->
+        <img class="mainLogo" src="/logo2.png" alt="">
+    </header>
+    <nav>
+        <ul>
+            <li><a href="/sendQuestion.html">Send Questions</a></li>
+            <li><a href="#" class="active">History</a></li>
+            <li><a href="#">Analysis</a></li>
+        </ul>
+    </nav>
+
+
+    <div class="container">
+        <table id="historyTable" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>QuestionID</th>
+                    <th>RunID</th>
+                    <th>ModelName</th>
+                    <th>Timestamp</th>
+                    <th>Temp</th>
+                    <th>BatchName</th>
+                    <th>RankingDifference</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+
+
+
+
+
+
+    <!-- MODAL DIVS     MODAL DIVS     MODAL DIVS -->
+    <div id="loading" >
+        <img src="/loading.gif" alt="">
+    </div>
+
+
+    
+</body>
+</html>

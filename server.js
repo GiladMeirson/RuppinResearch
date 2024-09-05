@@ -18,7 +18,8 @@ import
   getAllQuestions,
   InsertToAnswer,
   InsertPromptToDB,
-  getAllPrompts
+  getAllPrompts,
+  getExecutionScoresWithRunIDs
 } from './DBservices.js';
 
 //for .env file
@@ -218,6 +219,19 @@ app.get('/getAllExecutionScores', async (req, res) => {
   } catch (error) {
     console.error('Error retrieving scores:', error);
     res.status(500).send('Internal Server Error');
+  }
+});
+
+
+//GET ALL HISTORY from the database
+app.get('/getHistory', async (req, res) => {
+  try {
+    const history = await getExecutionScoresWithRunIDs(); // Use the provided function to get all execution scores
+    res.json({ history });
+
+  } catch (error) {
+    console.error('Error retrieving History:', error);
+    res.status(500).send('Internal Server Error',error);
   }
 });
 

@@ -13,6 +13,7 @@ const GET_URL_ALL_PROMPT_LIST = prefix+'/getAllPrompt';
 
 DELAY_REQUEST = 5000; // 5 seconds per request of LLM model to the server.
 
+timeoutIds = [];
 GroupData=[];
 CheckedQuestions=[];
 CurrentJSON_DATA=[];
@@ -115,13 +116,14 @@ $(document).ready(function() {
                 $('#counterModal').show();
                 $('#QuestionLengthSpan').html(selectedData.length);
                 for (let i = 0; i < selectedData.length; i++) {
-                    setTimeout(() => {
+                    const oneTimeOutId = setTimeout(() => {
                         const prompt = generateLLMPrompt(selectedData[i],selectedModel,parseFloat(temperature));
                         //console.log('Prompt:', prompt.text);
                         let isLastI = i==selectedData.length-1?true:false;
                         AiAPICall(prompt,isLastI,RunId,i);
 
                     }, DELAY_REQUEST * i);
+                    timeoutIds.push(oneTimeOutId);
                 }
             });
             
@@ -279,7 +281,7 @@ function RendderToConfirmModal(modelName,questionArray) {
     const cost = calcCost(sumOftokens,modelName);
     //console.log('sumOftokens:',sumOftokens,modelName,cost);
     $('#costTitleh3').html(`The cost of this run: ${cost}¢`);
-    $('#QuestAmountTitle').html(`You are going to send ${questionArray.length} questions`);
+    $('#QuestAmountTitle').html(`You are going to send ${questionArray.length} questions <br> temperature: ${$('#temperature-slider').val()}`);
 }
 
 
@@ -303,7 +305,7 @@ function DataTableEvent(){
         // });
 
 
-        // this is the correct way to select all the checkboxes in the table.
+        // this is the correct way to select all the checkboxes in the table. with the search applied.
         DATAtable.rows({ search: 'applied' }).nodes().to$().find('.row-checkbox').prop('checked', isChecked);
     });
 
@@ -873,12 +875,13 @@ function GetQuestionApiCall(){
         },
         error: function(error) {
             console.error('Failed to fetch api GET_URL_ALL_QUESTIONS:', error);
-            swal({
+            Swal.fire({
                 title: "Error",
                 text: "Failed to fetch API GET_URL_ALL_QUESTIONS",
                 icon: "error",
                 button: "OK",
             });
+
             $('#loading').hide();
         }
     });
@@ -1094,4 +1097,18 @@ function CloseWrapModalConfig(){
 
 function showWrap() {
     $('#WrapModalConfig').show();
+}
+
+function terminateProccess(){
+    for (let id of timeoutIds) {
+        clearTimeout(id);
+    }
+    $('#counterModal').hide();
+    $('#loading').hide();
+    Swal.fire({
+        title: "The process was terminated",
+        text: "The process was terminated by the user",
+        icon: "info",
+        button: "OK",
+    });
 }

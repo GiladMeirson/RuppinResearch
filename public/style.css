@@ -739,10 +739,24 @@ td.title:hover {
     border-radius: 5px;
 
 }
+#historyTable td {
+    text-align: center;
+}
 
 #contentCounter{
     width: 50% ;
 }
+
+.container #historyTable .bad{
+    background-color: #ff9c9c !important; 
+}
+.container #historyTable .med{
+    background-color: #fff588 !important;
+}
+.container #historyTable .good{
+    background-color: #a2ff88 !important;
+}
+
 
 
 

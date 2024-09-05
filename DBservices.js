@@ -285,6 +285,38 @@ export async function getAllExecutionScores() {
     }
 }
 
+export async function getExecutionScoresWithRunIDs() {
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request().execute('sp_getAllExeScoresByRunIds');
+        const history = result.recordset.map(row => ({
+            QuestionID: row.QuestionID,
+            RunID: row.RunID,
+            ModelName: row.ModelName,
+            timestamp: row.timestamp,
+            Temp: row.Temp,
+            batchName: row.batchName,
+            RankingDifference: row.RankingDifference,
+
+        }));
+        return history
+    } 
+    catch (err) {
+        console.error('Error in getExecutionScoresWithRunIDs DBservices --> ', err);
+        throw err;
+    } 
+    finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
+
+
+
+
+
 export async function getAllQuestions(){
     let pool;
     try {
