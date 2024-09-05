@@ -1,5 +1,5 @@
 const isLocal = window.location.hostname === 'localhost';
-const prefix = isLocal? 'http://localhost:3000' : '';
+const prefix = isLocal? 'http://localhost:3000' : 'https://ruppin-llm-research.vercel.app/';
 const loginUrl = `${prefix}/Login`;
 
 $(document).ready(()=>{
