@@ -313,6 +313,76 @@ export async function getExecutionScoresWithRunIDs() {
     }
 }
 
+export async function getconsistencyModels() {
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request().execute('spGetAvgconsistentPerModel');
+        const models = result.recordset.map(row => ({
+            ModelName: row.ModelName,
+            AveragePercentage: row.AveragePercentage,
+        }));
+        return models;
+    }
+    catch (err) {
+        console.error('Error in getconsistencyModels DBservices --> ', err);
+        throw err;
+    }
+    finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
+
+export async function getdetailedConsistencyModel() {
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request().execute('sp_getConsistentofQuestAndModels');
+        const models = result.recordset.map(row => ({
+            QuestionID: row.QuestionID,
+            ModelName: row.ModelName,
+            RankingDifference: row.RankingDifference,
+            Count: row.Count,
+            ConsistencyPercentage: row.ConsistencyPercentage,
+        }));
+        return models;
+    }
+    catch (err) {
+        console.error('Error in getdetailedConsistencyModel DBservices --> ', err);
+        throw err;
+    }
+    finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
+
+export async function getModelScores(){
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request().execute('sp_checkModelsScores');
+        const models = result.recordset.map(row => ({
+            ModelName: row.ModelName,
+            RankingDifference: row.RankingDifference,
+            count_rank: row.count_rank
+        }));
+        return models;
+    }
+    catch (err) {
+        console.error('Error in getModelScores DBservices --> ', err);
+        throw err;
+    }
+    finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
+
 
 
 

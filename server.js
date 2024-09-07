@@ -19,7 +19,10 @@ import
   InsertToAnswer,
   InsertPromptToDB,
   getAllPrompts,
-  getExecutionScoresWithRunIDs
+  getExecutionScoresWithRunIDs,
+  getconsistencyModels,
+  getdetailedConsistencyModel,
+  getModelScores
 } from './DBservices.js';
 
 //for .env file
@@ -231,6 +234,43 @@ app.get('/getHistory', async (req, res) => {
 
   } catch (error) {
     console.error('Error retrieving History:', error);
+    res.status(500).send('Internal Server Error',error);
+  }
+});
+
+//GET ALL MODEL SCORES from the database
+app.get('/getModelScores', async (req, res) => {
+  try {
+    const models = await getModelScores(); // Use the provided function to get stats about consistency of model
+    res.json({ models });
+
+  } 
+  catch (error) {
+    console.error('Error retrieving models stats: getModelScores', error);
+    res.status(500).send('Internal Server Error : Error retrieving models stats: getModelScores',error);
+  }
+});
+
+app.get('/getConsistencyModels', async (req, res) => {
+  try {
+    const models = await getconsistencyModels(); // Use the provided function to get stats about consistency of model
+    res.json({ models });
+
+  } 
+  catch (error) {
+    console.error('Error retrieving models stats: getconsistencyModels', error);
+    res.status(500).send('Internal Server Error',error);
+  }
+});
+
+app.get('/getDetailsConsistencyModels', async (req, res) => {
+  try {
+    const models = await getdetailedConsistencyModel(); // Use the provided function to get stats about consistency of model
+    res.json({ models });
+
+  } 
+  catch (error) {
+    console.error('Error retrieving models stats: getdetailedConsistencyModel', error);
     res.status(500).send('Internal Server Error',error);
   }
 });

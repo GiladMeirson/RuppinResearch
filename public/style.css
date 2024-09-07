@@ -88,6 +88,36 @@ nav ul li a.active {
     background-color: #f8f9fa;
     border-radius: 8px;
 }
+#consistencyModelsTableModal .modal-content{
+    width: 80%;
+    margin: 1% auto;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
+}
+#consistencyModelsTableModal table td {
+    text-align: center;
+}
+.close{
+    font-size: 32px;
+    color: lightcoral;
+}
+.close:hover{
+    cursor: pointer;
+    color: rgb(229, 66, 66);
+}
+
+.actions2 {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
+}
+.actions2 button {
+    margin-inline: 15px;
+}
 
 .select-model select {
     padding: 10px 15px;
