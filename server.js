@@ -22,7 +22,8 @@ import
   getExecutionScoresWithRunIDs,
   getconsistencyModels,
   getdetailedConsistencyModel,
-  getModelScores
+  getModelScores,
+  getcoherencyBetweenModels
 } from './DBservices.js';
 
 //for .env file
@@ -239,9 +240,12 @@ app.get('/getHistory', async (req, res) => {
 });
 
 //GET ALL MODEL SCORES from the database
-app.get('/getModelScores', async (req, res) => {
+/////////////// this 2 methods is post because more easy pass the params in the body
+app.post('/getModelScores', async (req, res) => {
   try {
-    const models = await getModelScores(); // Use the provided function to get stats about consistency of model
+    //console.log('req.query',req.body);
+    const domain = req.body.domain;
+    const models = await getModelScores(domain); // Use the provided function to get stats about consistency of model
     res.json({ models });
 
   } 
@@ -251,9 +255,10 @@ app.get('/getModelScores', async (req, res) => {
   }
 });
 
-app.get('/getConsistencyModels', async (req, res) => {
+app.post('/getConsistencyModels', async (req, res) => {
+  const domain = req.body.domain;
   try {
-    const models = await getconsistencyModels(); // Use the provided function to get stats about consistency of model
+    const models = await getconsistencyModels(domain); // Use the provided function to get stats about consistency of model
     res.json({ models });
 
   } 
@@ -263,6 +268,19 @@ app.get('/getConsistencyModels', async (req, res) => {
   }
 });
 
+app.post('/getCoherencyBetweenModels', async (req, res) => {
+  const domain = req.body.domain;
+  try {
+    const models = await getcoherencyBetweenModels(domain); // Use the provided function to get stats about consistency of model
+    res.json({ models });
+
+  } 
+  catch (error) {
+    console.error('Error retrieving models stats: getcoherencyBetweenModels', error);
+    res.status(500).send('Internal Server Error',error);
+  }
+});
+/////////////////
 app.get('/getDetailsConsistencyModels', async (req, res) => {
   try {
     const models = await getdetailedConsistencyModel(); // Use the provided function to get stats about consistency of model

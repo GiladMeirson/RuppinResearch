@@ -138,6 +138,8 @@ nav ul li a.active {
     font-size: 16px;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 100px -20px, rgba(0, 0, 0, 0.3) 0px 30px 60px -30px, rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
+
 }
 .cancel-button{
     padding: 10px 20px;
@@ -777,7 +779,30 @@ td.title:hover {
 #contentCounter{
     width: 50% ;
 }
+/* -------- */
 
+#selectDomain {
+    width: 8%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    color: #333;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#selectDomain:focus {
+    border-color: #66afe9;
+    box-shadow: 0 0 8px rgba(102, 175, 233, 0.6);
+    outline: none;
+}
+
+#selectDomain option {
+    padding: 10px;
+}
+/* -------- */
 .container #historyTable .bad{
     background-color: #ff9c9c !important; 
 }
@@ -789,6 +814,20 @@ td.title:hover {
 }
 
 
+.wrapLine {
+    display: flex;
+    justify-content: space-evenly;
+}
+.wrapLine #myChart1, #myChart2, #myChart3{
+    max-width: 30%;;
+    max-height: 300px;
+}
+
+
+#myChart1:hover, #myChart2:hover, #myChart3:hover{
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ccc;
+}
 
 
 /* footerfooterfooterfooterfooterfooterfooterfooterfooterfooterfooter */

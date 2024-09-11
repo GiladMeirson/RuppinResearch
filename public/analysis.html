@@ -44,17 +44,32 @@
     <main>
         <h3>Actions</h3>
         <div class="actions2">
-            <button onclick="getconsistencyModels()" id="btn1" class="send-button">Show consistency of models</button>
-            <button onclick="getmodelsScores()" id="btn2" class="send-button">Get models scores</button>
-            <button id="btn3" class="send-button">btn3</button>
+            <select name="selectDomain" id="selectDomain">
+                <option value="ALL">ALL</option>
+                <option value="so">Stack Overflow</option>
+                <option value="en">English language</option>
+            </select>
+            <button onclick="getconsistencyModels()" id="btn1" class="send-button">Inner model consistency</button>
+            <button onclick="getmodelsScores()" id="btn2" class="send-button">WOC coherency</button>
+            <button onclick="getCoherencyBetweenModels()" id="btn3" class="send-button">Inter models coherency</button>
         </div>
         <div class="container">
             <div id="subActions">
 
             </div>
-            <canvas id="myChart">
+            <canvas id="myChart"></canvas>
+            <div class="wrapLine">
+                <canvas style="width: 15px;" id="myChart1">
 
-            </canvas>
+                </canvas>
+                <canvas style="width: 15px;" id="myChart2">
+    
+                </canvas>
+                <canvas style="width: 15px;" id="myChart3">
+    
+                </canvas>
+            </div>
+
         </div>
     </main>
 

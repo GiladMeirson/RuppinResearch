@@ -1,6 +1,6 @@
 import sql from 'mssql';
 import dotenv from 'dotenv';
-import {transformQuestionsAndAnswers} from './utils.js';
+import {transformQuestionsAndAnswers,transformModelData} from './utils.js';
 
 dotenv.config();
 
@@ -313,11 +313,13 @@ export async function getExecutionScoresWithRunIDs() {
     }
 }
 
-export async function getconsistencyModels() {
+export async function getconsistencyModels(domain) {
     let pool;
     try {
         pool = await sql.connect(config);
-        const result = await pool.request().execute('spGetAvgconsistentPerModel');
+        const request = pool.request();
+        request.input('domain', sql.VarChar, domain); // Add the parameter here
+        const result = await request.execute('spGetAvgconsistentPerModel');
         const models = result.recordset.map(row => ({
             ModelName: row.ModelName,
             AveragePercentage: row.AveragePercentage,
@@ -360,11 +362,14 @@ export async function getdetailedConsistencyModel() {
     }
 }
 
-export async function getModelScores(){
+export async function getModelScores(domain) {
+    //console.log('domain',domain);
     let pool;
     try {
         pool = await sql.connect(config);
-        const result = await pool.request().execute('sp_checkModelsScores');
+        const result = await pool.request()
+            .input('domain', sql.VarChar, domain) // Add the parameter here
+            .execute('sp_checkModelsScores');
         const models = result.recordset.map(row => ({
             ModelName: row.ModelName,
             RankingDifference: row.RankingDifference,
@@ -382,6 +387,36 @@ export async function getModelScores(){
         }
     }
 }
+
+export async function getcoherencyBetweenModels(domain) {
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('domain', sql.VarChar, domain) // Add the parameter here
+            .execute('sp_checkCompatibilityModels');
+        const models = result.recordset.map(row => ({
+            Model1: row.Model1,
+            Model2: row.Model2,
+            AlignmentLevel: row.AlignmentLevel,
+            Count: row.Count,
+            Percentage: row.Percentage
+        }));
+        return transformModelData(models);
+
+    }
+    catch (err) {
+        console.error('Error in getcoherencyBetweenModels DBservices --> ', err);
+        throw err;
+    }
+    finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
+
+        
 
 
 
