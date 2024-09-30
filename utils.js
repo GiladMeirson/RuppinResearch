@@ -25,6 +25,25 @@ export function transformData(data, modelName) {
 }
 
 
+export function transformModelData(inputArray) {
+  const map = new Map();
+
+  inputArray.forEach(item => {
+      const key = `${item.Model1}vs${item.Model2}`;
+      if (!map.has(key)) {
+          map.set(key, []);
+      }
+      map.get(key).push({ AlignmentLevel: item.AlignmentLevel, Percentage: item.Percentage });
+  });
+
+  const resultArray = Array.from(map.entries()).map(([key, value]) => {
+      const [Model1, Model2] = key.split('vs');
+      return { Model1, Model2, Alignments: value };
+  });
+
+  return resultArray;
+}
+
 
 
 export function transformQuestionsAndAnswers(data) {
