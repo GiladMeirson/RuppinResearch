@@ -416,6 +416,37 @@ export async function getcoherencyBetweenModels(domain) {
     }
 }
 
+
+export async function getDetailEachAnswerOfQuestRankCompare(questId,RunId){
+    let pool;
+    try {
+        pool = await sql.connect(config);
+        const result = await pool.request()
+            .input('QuestId', sql.Int, questId)
+            .input('RunId', sql.NVarChar, RunId) // Add the parameter here
+            .execute('sp_getForEachQuestDetailRankCompare');
+        const res = result.recordset.map(row => ({
+            ID: row.ID,
+            AnswerID: row.AnswerID,
+            HumanRank: row.HumanRank,
+            AiRank: row.AiRank,
+            AiExplnation: row.AiExplnation,
+        }));
+        if (res.length !=3 ) {
+            throw new Error(`Error in getDetailEachAnswerOfQuestRankCompare length isnt 3 \n is = ${res.length}  DBservices --> `);
+        }
+        return res;
+    }
+    catch (err) {
+        console.error('Error in getDetailEachAnswerOfQuestRankCompare DBservices --> ', err);
+        throw err;
+    }
+    finally {
+        if (pool) {
+            await pool.close();
+        }
+    }
+}
         
 
 

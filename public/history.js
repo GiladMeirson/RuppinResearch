@@ -1,6 +1,8 @@
+
 const isLocal = window.location.hostname === 'localhost';
 const prefix = isLocal? 'http://localhost:3000' : '';
 const historyURL = prefix + '/getHistory';
+const detailAPI = prefix + '/getDetailEachAnswerOfQuestRankCompare';
 
 
 historyDATATABLE = null;
@@ -65,6 +67,7 @@ function CreateHistoryDataTable(history) {
             ],
             createdRow: function(row, data, dataIndex) {
                 //console.log('Row created:', data);
+                $(row).attr('id', `${data.QuestionID}|||${data.RunID}`);
                 if (data.RankingDifference == 0) {
                     $(row).addClass('good');
                 } else if (data.RankingDifference == 2) {
@@ -72,6 +75,35 @@ function CreateHistoryDataTable(history) {
                 } else if (data.RankingDifference == 4) {
                     $(row).addClass('bad');
                 }
+
+                $(row).on('click', function() {
+                    console.log('Row clicked:', data);
+                    // Add your click handling logic here
+                    $('#loading').show();
+                    $.ajax({
+                        url: detailAPI,
+                        method: 'POST',
+                        data: JSON.stringify({
+                            questionID: data.QuestionID,
+                            runID: data.RunID
+                        }),
+                        contentType: 'application/json',
+                        success: function(response) {
+                            console.log('Detail API call successful:', response);
+                            $('#loading').hide();
+                            RenderMetaDataToModal(data);
+                            const resDiff = analyzeRankingDifferences(response.answers)
+                            renderRankingTable(response.answers,resDiff);
+                            //console.log('Ranking differences:', analyzeRankingDifferences(response.answers));
+                            $('#detailsModal').show();
+                        },
+                        error: function(error) {
+                            console.error('Detail API call failed:', error);
+                            $('#loading').hide();
+                        }
+                    });
+                   
+                });
             }
         });
     }
@@ -104,4 +136,104 @@ function formatDate(dateString) {
     const minutes = String(date.getUTCMinutes()).padStart(2, '0');
 
     return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+const closeme=(id)=>{
+    $(`#${id}`).hide();
+}
+
+const RenderMetaDataToModal=(data)=>{
+    $('#modal-questionId').html(data.QuestionID)
+    $('#modal-runId').html(data.RunID)
+    $('#modal-modelName').html(data.ModelName)
+    $('#modal-batchName').html(data.batchName)
+    $('#modal-temp').html(data.Temp)
+    $('#modal-RankingDifference').html(data.RankingDifference)
+    if (data.RankingDifference == 0) {
+        $('#modal-RankingDifference').css('color', 'green');
+    } else if (data.RankingDifference == 2) {
+        $('#modal-RankingDifference').css('color', 'orange');
+    } else if (data.RankingDifference == 4) {
+        $('#modal-RankingDifference').css('color', 'red');
+    }
+}
+
+function renderRankingTable(rankings,resRankDiff) {
+    const tbody = document.getElementById('rankingTableBody');
+    tbody.innerHTML = ''; // Clear existing content
+
+    rankings.forEach((rank, index) => {
+        const tr = document.createElement('tr');
+        const thisRes = resRankDiff.filter(res => res.answerId === rank.AnswerID);
+        //console.log('thisRes:', thisRes);
+        tr.className = thisRes[0].status;
+
+
+        tr.innerHTML = `
+            <td>${rank.ID}</td>
+            <td>${rank.AnswerID}</td>
+            <td>${rank.HumanRank}</td>
+            <td>${rank.AiRank}</td>
+            <td>${thisRes[0].positionDiff}</td>
+            <td>
+                <div class="explanation-tooltip" title="${rank.AiExplnation}">
+                    ${rank.AiExplnation.substring(0, 25)}...
+                    <span class="tooltip-icon">ℹ️</span>
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+
+    // Initialize tooltips for the explanation column
+    $('.explanation-tooltip').tooltip({
+        placement: 'top',
+        html: true,
+        container: 'body'
+    });
+}
+
+
+function analyzeRankingDifferences(rankings) {
+    // Extract and sort human ranks and AI ranks separately
+    let humanRanks = rankings.map(r => r.HumanRank).sort((a, b) => b - a); // Sort descending
+    let aiRanks = rankings.map(r => r.AiRank).sort((a, b) => b - a); // Sort descending
+    
+    // Create position maps for each answer
+    let humanPositions = new Map();
+    let aiPositions = new Map();
+    
+    // Map each rank to its position (0-based index)
+    humanRanks.forEach((rank, index) => {
+        humanPositions.set(rank, index);
+    });
+    
+    aiRanks.forEach((rank, index) => {
+        aiPositions.set(rank, index);
+    });
+    
+    // Analyze each answer's position difference
+    let results = rankings.map(answer => {
+        let humanPosition = humanPositions.get(answer.HumanRank);
+        let aiPosition = aiPositions.get(answer.AiRank);
+        let positionDiff = Math.abs(humanPosition - aiPosition);
+        
+        let status = 'good'; // Same position
+        if (positionDiff === 1) {
+            status = 'med';  // 1 position difference
+        } else if (positionDiff >= 2) {
+            status = 'bad';  // 2 or more positions difference
+        }
+        
+        return {
+            answerId: answer.AnswerID,
+            humanRank: answer.HumanRank,
+            aiRank: answer.AiRank,
+            positionDiff: positionDiff,
+            status: status
+        };
+    });
+    
+    return results;
 }

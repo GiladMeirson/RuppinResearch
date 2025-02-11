@@ -23,7 +23,8 @@ import
   getconsistencyModels,
   getdetailedConsistencyModel,
   getModelScores,
-  getcoherencyBetweenModels
+  getcoherencyBetweenModels,
+  getDetailEachAnswerOfQuestRankCompare
 } from './DBservices.js';
 
 //for .env file
@@ -299,6 +300,20 @@ app.get('/getAllQuestions', async (req, res) => {
     const questions = await getAllQuestions(); // Use the provided function to get all questions
     //console.log('in the controller ',questions)
     res.json({ questions });
+
+  } catch (error) {
+    console.error('Error retrieving questions:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+//GET detail about RankCompare for each Answer of quest in runid
+app.post('/getDetailEachAnswerOfQuestRankCompare', async (req, res) => {
+  try {
+    const runID = req.body.runID;
+    const questionID = req.body.questionID;
+    const answers = await getDetailEachAnswerOfQuestRankCompare(questionID,runID); // Use the provided function to get all questions
+    res.json({ answers });
 
   } catch (error) {
     console.error('Error retrieving questions:', error);

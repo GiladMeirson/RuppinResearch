@@ -7,6 +7,7 @@
        
          <!-- Include jQuery only once -->
          <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+         
          <!-- Include jQuery UI -->
          <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
          <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -20,6 +21,10 @@
     
          <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
          <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+
+      
+
+
          <link rel="icon" href="/android-chrome-512x512.png" type="image/x-icon">
          <link rel="stylesheet" href="/style.css">
          <script src="/history.js"></script>
@@ -56,6 +61,57 @@
         </table>
     </div>
 
+    <!-- MODAL MODAL MODAL MODAL MODAL MODAL MODAL -->
+    <div id="detailsModal" class="custom-modal">
+        <div class="modal-container">
+            <div class="modal-content2">
+                <div class="modal-header">
+                    <h5>Execution Details</h5>
+                    <span onclick="closeme('detailsModal')" class="close-button">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="execution-details">
+                        <div class="details-grid">
+                            <div class="details-column">
+                                <p><strong>QuestionID:</strong> <span id="modal-questionId"></span></p>
+                                <p><strong>BatchName:</strong> <span id="modal-batchName"></span></p>
+                                <p><strong>RunID:</strong> <span id="modal-runId"></span></p>
+                            </div>
+                            <div class="details-column">
+                                <p><strong>ModelName:</strong> <span id="modal-modelName"></span></p>
+                                <p><strong>Temperature:</strong> <span id="modal-temp"></span></p>
+                                <p><strong>Ranking Difference:</strong> <span id="modal-RankingDifference"></span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ranking-comparison">
+                        <h6>Answers Ranking Comparison</h6>
+                        <table class="ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>Exec ID (SQL)</th>
+                                    <th>AnswerID</th>
+                                    <th>Human Rank</th>
+                                    <th>AI Rank</th>
+                                    <th>Index Diff</th>
+                                    <th>Ai Explanation</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rankingTableBody">
+
+                            </tbody>
+                        </table>
+                    </div>
+    
+               
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
 
     <footer>
         <div class="footer-content">
@@ -66,7 +122,7 @@
             <a href="#">Contact Us</a>
           </nav>
         </div>
-      </footer>
+    </footer>
 
 
 
