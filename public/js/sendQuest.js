@@ -395,20 +395,20 @@ function showQuestionDetails(question) {
         const detailsHTML = `
             <div class="question-details">
                 <h2>${question.Title}</h2>
-                <p><strong>Question Score:</strong> ${question.QuestionScore}</p>
+                <p><strong>Question Score:</strong> ${question.Score}</p>
                 <p><strong>View Count:</strong> ${question.ViewCount}</p>
                 <p><strong>Answer Count:</strong> ${question.AnswerCount}</p>
-                <p><strong>Favorite Count:</strong> ${question.FavoriteCount}</p>
                 <h3>Question Body:</h3>
                 <div class="question-body">${formatContent(question.Body)}</div>
                 <h3>Tags:</h3>
                 <p>${tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}</p>
+                <p>_____________________________________________________________________________</p>
                 <h3>Answers:</h3>
                 ${question.answers.map(answer => `
                     <div class="answer">
                         <div class="answer-header">
                             <span class="answer-score">Score: ${answer.Score}</span>
-                            <span class="answer-date">Answered on: ${new Date(answer.AnswerCreationDate).toLocaleString()}</span>
+                            <span class="answer-date">Answered on: ${new Date(parseInt(answer.AnswerCreationDate)).toLocaleString()}</span>
                         </div>
                         <div class="answer-body">${formatContent(answer.Body)}</div>
                     </div>
