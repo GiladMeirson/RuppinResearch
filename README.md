@@ -1,5 +1,5 @@
 # Comparative Analysis of Human vs LLM Rankings on Stack Exchange Questions
-![Project Logo](/assets/images/logo.png)
+![Project Logo](./assets/images/logo.png)
 
 ## Project Overview
 
@@ -36,7 +36,7 @@ Initial analyses are underway, and we expect to share preliminary findings in th
 ## Project Architecture
 
 This section outlines the overall structure of the project.
-![Architecture Diagram](/assets/d2.drawio.png)
+![Architecture Diagram](./assets/d2.drawio.png)
 
 ## Repository Structure
 
