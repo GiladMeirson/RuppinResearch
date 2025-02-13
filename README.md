@@ -1,4 +1,5 @@
 # Comparative Analysis of Human vs LLM Rankings on Stack Exchange Questions
+![Project Logo](/assets/images/logo.png)
 
 ## Project Overview
 
@@ -31,6 +32,11 @@ The research project is currently in active development, with ongoing data colle
 - Running preliminary comparisons between human and LLM rankings
 
 Initial analyses are underway, and we expect to share preliminary findings in the coming months.
+
+## Project Architecture
+
+This section outlines the overall structure of the project.
+![Architecture Diagram](/assets/d2.drawio.png)
 
 ## Repository Structure
 
