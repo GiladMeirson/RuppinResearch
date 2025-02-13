@@ -1,5 +1,6 @@
 import sql from 'mssql';
 import dotenv from 'dotenv';
+import Execution from './BL/Execution.js';
 import {transformQuestionsAndAnswers,transformModelData} from './utils.js';
 
 dotenv.config();
@@ -290,17 +291,7 @@ export async function getExecutionScoresWithRunIDs() {
     try {
         pool = await sql.connect(config);
         const result = await pool.request().execute('sp_getAllExeScoresByRunIds');
-        const history = result.recordset.map(row => ({
-            QuestionID: row.QuestionID,
-            RunID: row.RunID,
-            ModelName: row.ModelName,
-            timestamp: row.timestamp,
-            Temp: row.Temp,
-            batchName: row.batchName,
-            RankingDifference: row.RankingDifference,
-
-        }));
-        return history
+        return result.recordset.map(row => new Execution(row));
     } 
     catch (err) {
         console.error('Error in getExecutionScoresWithRunIDs DBservices --> ', err);

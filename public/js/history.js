@@ -40,6 +40,7 @@ function getHistoryData() {
 function CreateHistoryDataTable(history) {
     $('#loading').hide();
     $('#historyTable').show();
+    console.log('History:', history);
     if (!$.fn.DataTable.isDataTable('#historyTable'))
     {
         historyDATATABLE = $('#historyTable').DataTable({
