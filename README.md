@@ -78,8 +78,7 @@ npm start
 This research is conducted at the Ruppin Academic Center, Israel.
 
 ## License
-
-[Researcher to specify the license under which this project is released]
+This project's license is currently pending determination as the research is still in development. Once finalized, the appropriate license terms will be specified here.
 
 ## Contact
 
