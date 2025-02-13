@@ -23,15 +23,50 @@ The study centers on comparing human-generated rankings of questions from Stack 
 
 ## Current Status
 
-[Researcher to add information about the current stage of the project, any preliminary findings, or ongoing work]
+The research project is currently in active development, with ongoing data collection and analysis. Our team is:
+
+- Collecting and processing Stack Exchange data
+- Implementing LLM integrations
+- Developing ranking algorithms
+- Running preliminary comparisons between human and LLM rankings
+
+Initial analyses are underway, and we expect to share preliminary findings in the coming months.
 
 ## Repository Structure
 
-[Researcher to add information about the organization of code, data, and documentation within the repository]
+```
+The repository is organized as follows:
+
+/src
+    - server/         # Backend server implementation
+    - services/       # API services and LLM integrations
+    - utils/          # Helper functions and utilities
+    - routes/         # API endpoint definitions
+    - config/         # Configuration files
+
+/data
+    - raw/           # Original Stack Exchange data
+    - processed/     # Cleaned and processed datasets
+    - results/       # Analysis outputs and rankings
+
+/docs
+    - api/           # API documentation
+    - models/        # LLM model specifications
+    - analysis/      # Research methodology details
+
+/tests
+    - unit/          # Unit test files
+    - integration/   # Integration test files
+
+/scripts
+    - data_processing/    # Data preparation scripts
+    - analysis/          # Analysis and evaluation scripts
+```
 
 ## Getting Started
 
-[Instructions for setting up the project environment, running scripts, or replicating the study]
+npm install @google-cloud/vertexai @google/generative-ai body compression cors dotenv express mssql openai pako parser
+npm start
 
 ## Contributors
 
@@ -48,7 +83,8 @@ This research is conducted at the Ruppin Academic Center, Israel.
 
 ## Contact
 
-For more information about this research, please contact [Researcher to add preferred contact method]
+For more information about this research, please contact us
+Gilad.meirson@gmail.com
+bennybornfeld@gmail.com
 
-## NPM Install
-npm install @google-cloud/vertexai @google/generative-ai body compression cors dotenv express mssql openai pako parser
+
