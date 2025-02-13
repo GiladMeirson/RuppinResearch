@@ -36,6 +36,11 @@ Initial analyses are underway, and we expect to share preliminary findings in th
 ## Project Architecture
 
 This section outlines the overall structure of the project.
+
+
+<br/>
+<br/>
+
 ![Architecture Diagram](https://github.com/GiladMeirson/RuppinResearch/blob/test_v2/public/assets/d2.drawio.png?raw=true)
 
 ## Repository Structure
