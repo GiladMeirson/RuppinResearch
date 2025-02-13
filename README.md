@@ -49,3 +49,6 @@ This research is conducted at the Ruppin Academic Center, Israel.
 ## Contact
 
 For more information about this research, please contact [Researcher to add preferred contact method]
+
+## NPM Install
+npm install @google-cloud/vertexai @google/generative-ai body compression cors dotenv express mssql openai pako parser

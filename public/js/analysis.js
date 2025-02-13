@@ -16,7 +16,7 @@ const getCoherencyBetweenModelsURL = prefix + '/getCoherencyBetweenModels';
 
 $(document).ready(function() {
     //$('#loading').show();
-
+    footerHtml();
     canvas = document.getElementById('myChart');
     canvas1 = document.getElementById('myChart1');
     canvas2 = document.getElementById('myChart2');

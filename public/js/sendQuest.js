@@ -46,6 +46,7 @@ RESULT=[];
 let executionScores = []; 
 $(document).ready(function() {
     $('#loading').show();
+    footerHtml();
     GetQuestionApiCall();
     getAllPromptList();
     username = JSON.parse(localStorage.getItem('user')).username;

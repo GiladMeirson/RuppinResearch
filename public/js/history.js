@@ -10,6 +10,7 @@ historyDATATABLE = null;
 
 $(document).ready(function() {
     $('#loading').show();
+    footerHtml();
     getHistoryData();
 });
 
