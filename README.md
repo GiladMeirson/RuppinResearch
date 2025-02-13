@@ -84,7 +84,7 @@ This research is conducted at the Ruppin Academic Center, Israel.
 ## Contact
 
 For more information about this research, please contact us
-Gilad.meirson@gmail.com
-bennybornfeld@gmail.com
+- Gilad.meirson@gmail.com
+- bennybornfeld@gmail.com
 
 
