@@ -1,4 +1,3 @@
-
 const isLocal = window.location.hostname === 'localhost';
 const prefix = isLocal? 'http://localhost:3000' : '';
 const historyURL = prefix + '/getHistory';
@@ -160,42 +159,57 @@ const RenderMetaDataToModal=(data)=>{
     }
 }
 
-function renderRankingTable(rankings,resRankDiff) {
-    const tbody = document.getElementById('rankingTableBody');
-    tbody.innerHTML = ''; // Clear existing content
-
-    rankings.forEach((rank, index) => {
-        const tr = document.createElement('tr');
-        const thisRes = resRankDiff.filter(res => res.answerId === rank.AnswerID);
-        //console.log('thisRes:', thisRes);
-        tr.className = thisRes[0].status;
-
-
-        tr.innerHTML = `
-            <td>${rank.ID}</td>
-            <td>${rank.AnswerID}</td>
-            <td>${rank.HumanRank}</td>
-            <td>${rank.AiRank}</td>
-            <td>${thisRes[0].positionDiff}</td>
-            <td>
-                <div class="explanation-tooltip" title="${rank.AiExplnation}">
-                    ${rank.AiExplnation.substring(0, 25)}...
-                    <span class="tooltip-icon">ℹ️</span>
-                </div>
-            </td>
-        `;
-
-        tbody.appendChild(tr);
+function renderRankingTable(rankings, resRankDiff) {
+    // Prepare data table array by merging rankings with computed differences
+    const tableData = rankings.map(rank => {
+        const matching = resRankDiff.find(r => r.answerId === rank.AnswerID);
+        return {
+            id: rank.ID,
+            answerId: rank.AnswerID,
+            humanRank: rank.HumanRank,
+            aiRank: rank.AiRank,
+            positionDiff: matching ? matching.positionDiff : '',
+            aiExplanation: rank.AiExplnation,
+            status: matching ? matching.status : ''
+        };
     });
 
-    // Initialize tooltips for the explanation column
+    // Destroy any existing DataTable instance
+    if ($.fn.DataTable.isDataTable('#ranking-table')) {
+        $('#ranking-table').DataTable().clear().destroy();
+    }
+
+    // Initialize the ranking table as a jQuery DataTable with search and length options disabled
+    $('#ranking-table').DataTable({
+        data: tableData,
+        searching: false,
+        lengthChange: false,
+        columns: [
+            { title: "Exec ID (SQL)", data: "id" },
+            { title: "AnswerID", data: "answerId" },
+            { title: "Human Rank", data: "humanRank" },
+            { title: "AI Rank", data: "aiRank" },
+            { title: "Index Diff", data: "positionDiff" },
+            { 
+                title: "AI Explanation", 
+                data: "aiExplanation",
+                render: function(data) {
+                    return `<div class="explanation-tooltip" title="${data}">${data.substring(0, 25)}...<span class="tooltip-icon">ℹ️</span></div>`;
+                }
+            }
+        ],
+        rowCallback: function(row, data) {
+            $(row).addClass(data.status);
+        }
+    });
+
+    // Reinitialize tooltips for the explanation column
     $('.explanation-tooltip').tooltip({
         placement: 'top',
         html: true,
         container: 'body'
     });
 }
-
 
 function analyzeRankingDifferences(rankings) {
     // Extract and sort human ranks and AI ranks separately
