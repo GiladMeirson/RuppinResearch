@@ -1,5 +1,5 @@
 # Comparative Analysis of Human vs LLM Rankings on Stack Exchange Questions
-![Project Logo](./assets/images/logo.png)
+![Project Logo](https://github.com/GiladMeirson/RuppinResearch/blob/test_v2/public/assets/logo2.png?raw=true)
 
 ## Project Overview
 
@@ -36,7 +36,7 @@ Initial analyses are underway, and we expect to share preliminary findings in th
 ## Project Architecture
 
 This section outlines the overall structure of the project.
-![Architecture Diagram](./assets/d2.drawio.png)
+![Architecture Diagram](https://github.com/GiladMeirson/RuppinResearch/blob/test_v2/public/assets/d2.drawio.png?raw=true)
 
 ## Repository Structure
 
