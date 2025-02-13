@@ -5,7 +5,7 @@ const loginUrl = `${prefix}/Login`;
 $(document).ready(()=>{
 
     if (localStorage.getItem('user')) {
-        window.location.href = '/sendQuestion.html';
+        window.location.href = 'pages/sendQuestion.html';
     }
 
 
@@ -38,7 +38,7 @@ $(document).ready(()=>{
                         icon: "success"
                     });
                     setTimeout(() => {
-                    window.location.href = '/sendQuestion.html';
+                    window.location.href = 'pages/sendQuestion.html';
                     }, 1200);
                 }
             },
