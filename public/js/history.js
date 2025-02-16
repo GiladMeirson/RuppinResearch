@@ -11,6 +11,8 @@ $(document).ready(function() {
     $('#loading').show();
     footerHtml();
     getHistoryData();
+    Q = JSON.parse(sessionStorage.getItem('questions'));
+    getQuestionDetailToModalEvent();
 });
 
 
@@ -145,6 +147,7 @@ const closeme=(id)=>{
 
 const RenderMetaDataToModal=(data)=>{
     $('#modal-questionId').html(data.QuestionID)
+    //getQuestionDetailToModalEvent(data.QuestionID);
     $('#modal-runId').html(data.RunID)
     $('#modal-modelName').html(data.ModelName)
     $('#modal-batchName').html(data.batchName)
@@ -159,6 +162,14 @@ const RenderMetaDataToModal=(data)=>{
     }
 }
 
+const getQuestionDetailToModalEvent=()=>{
+    $('#modal-questionId').on('click',()=>{
+        const questionID = parseInt($('#modal-questionId').html());
+        const question = Q.find(q => q.Id === questionID);
+        showQuestionDetails(question);
+    });
+}
+
 function renderRankingTable(rankings, resRankDiff) {
     // Prepare data table array by merging rankings with computed differences
     const tableData = rankings.map(rank => {
@@ -167,6 +178,7 @@ function renderRankingTable(rankings, resRankDiff) {
             id: rank.ID,
             answerId: rank.AnswerID,
             humanRank: rank.HumanRank,
+            score : rank.Score,
             aiRank: rank.AiRank,
             positionDiff: matching ? matching.positionDiff : '',
             aiExplanation: rank.AiExplnation,
@@ -187,7 +199,8 @@ function renderRankingTable(rankings, resRankDiff) {
         columns: [
             { title: "Exec ID (SQL)", data: "id" },
             { title: "AnswerID", data: "answerId" },
-            { title: "Human Rank", data: "humanRank" },
+            { title: "Original score", data: "score" },
+            { title: "Human Rank (normalized score)", data: "humanRank" },
             { title: "AI Rank", data: "aiRank" },
             { title: "Index Diff", data: "positionDiff" },
             { 
@@ -252,4 +265,79 @@ function analyzeRankingDifferences(rankings) {
     });
     
     return results;
+}
+
+
+
+// Function to show question details
+function showQuestionDetails(question) {
+    console.log('showQuestionDetails:', question);
+    const tags = parseTags(question.Tags);
+    const detailsHTML = `
+        <div class="question-details">
+            <h2>${question.Title}</h2>
+            <p><strong>Question Score:</strong> ${question.Score}</p>
+            <p><strong>View Count:</strong> ${question.ViewCount}</p>
+            <p><strong>Answer Count:</strong> ${question.AnswerCount}</p>
+            <h3>Question Body:</h3>
+            <div class="question-body">${formatContent(question.Body)}</div>
+            <h3>Tags:</h3>
+            <p>${tags.map(tag => `<span class="tag">${tag}</span>`).join(' ')}</p>
+            <p>_____________________________________________________________________________</p>
+            <h3>Answers:</h3>
+            ${question.answers.map(answer => `
+                <div class="answer">
+                    <div class="answer-header">
+                        <span class="answer-score">Score: ${answer.Score} || Normalized Score: ${answer.NormalizedScore} </span>
+                        <span class="answer-date">Answered on: ${new Date(parseInt(answer.AnswerCreationDate)).toLocaleString()}</span>
+                    </div>
+                    <div class="answer-body">${formatContent(answer.Body)}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    // Create a modal to display question details
+    $('<div>')
+        .html(detailsHTML)
+        .dialog({
+            title: 'Question Details',
+            width: Math.min($(window).width() * 0.8, 800),
+            height: Math.min($(window).height() * 0.8, 600),
+            modal: true,
+            create: function() {
+                $(this).css("maxWidth", "100%");
+            },
+            open: function() {
+                $('.ui-widget-overlay').on('click', function() {
+                    $(this).siblings('.ui-dialog').find('.ui-dialog-content').dialog('close');
+                });
+            }
+        });
+}
+
+
+
+// Function to parse tags string into an array
+function parseTags(tagsString) {
+    return tagsString.slice(1, -1).split('><');
+}
+// Function to format content, handling images and code blocks
+function formatContent(content) {
+    //console.log('formatContent:', content);
+    // Replace image tags with responsive ones
+    content = content.replace(/<img[^>]+>/g, function(imgTag) {
+        return imgTag.replace(/width="[^"]*"/g, 'width="100%"')
+                     .replace(/height="[^"]*"/g, 'height="auto"');
+    });
+
+    // Wrap code blocks with pre tags if not already wrapped
+    content = content.replace(/<code>([\s\S]*?)<\/code>/g, function(match, codeContent) {
+        if (match.indexOf('<pre>') === -1) {
+            return '<pre><code>' + codeContent + '</code></pre>';
+        }
+        return match;
+    });
+
+    return content;
 }

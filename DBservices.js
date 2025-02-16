@@ -420,6 +420,7 @@ export async function getDetailEachAnswerOfQuestRankCompare(questId,RunId){
             ID: row.ID,
             AnswerID: row.AnswerID,
             HumanRank: row.HumanRank,
+            Score: row.score, // note this is the score before normalization
             AiRank: row.AiRank,
             AiExplnation: row.AiExplnation,
         }));

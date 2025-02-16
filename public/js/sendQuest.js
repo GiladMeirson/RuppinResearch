@@ -407,7 +407,7 @@ function showQuestionDetails(question) {
                 ${question.answers.map(answer => `
                     <div class="answer">
                         <div class="answer-header">
-                            <span class="answer-score">Score: ${answer.Score}</span>
+                            <span class="answer-score">Score: ${answer.Score} || Normalized Score: ${answer.NormalizedScore} </span>
                             <span class="answer-date">Answered on: ${new Date(parseInt(answer.AnswerCreationDate)).toLocaleString()}</span>
                         </div>
                         <div class="answer-body">${formatContent(answer.Body)}</div>
@@ -872,6 +872,7 @@ function GetQuestionApiCall(){
             console.log('Questions fetched successfully:', response);
             Q=response.questions;
             CreateDataTable(Q);
+            sessionStorage.setItem('questions', JSON.stringify(Q));
             $('#loading').hide();
         },
         error: function(error) {
