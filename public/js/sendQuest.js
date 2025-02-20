@@ -1000,8 +1000,8 @@ function CreateDataTable (QuestionArray){
             },
             {
                 data:'serialNum',
-                render: function(data) {
-                    return calcCost(calcTokens(data))+'¢';
+                render: function(data, type, row) {
+                    return calcCost(calcTokens(data), row.modelName || 'gpt-4o-mini') + '¢';
                 }
             }
 
@@ -1074,12 +1074,24 @@ function calcCost(tokens,modelName='gpt-4o-mini') {
         
 
     }
-    if (modelName=='gemini-1.5') {
-        return 0;
+    if (modelName=='o1-mini') {
+        const inputCost = tokens / 1000000 * 15;
+        const outputCost = outputTokensAVG/1000000 * 60;
+        sum = inputCost + outputCost;
+    }
+    if (modelName=='gemini-1.5-flash') {
+        const inputCost = tokens / 1000000 * 3;
+        const outputCost = outputTokensAVG/1000000 * 6;
+        sum = inputCost + outputCost
+    }
+    if (modelName=='gemini-2.0-flash') {
+        const inputCost = tokens / 1000000 * 10;
+        const outputCost = outputTokensAVG/1000000 * 40;
+        sum = inputCost + outputCost
     }
     if (modelName=='gpt-3.5-turbo') {
-        const inputCost = tokens / 1000000 * 0.5;
-        const outputCost = outputTokensAVG/1000000 * 1.5;
+        const inputCost = tokens / 1000000 * 3;
+        const outputCost = outputTokensAVG/1000000 * 6;
         sum = inputCost + outputCost
     }
     
@@ -1113,4 +1125,15 @@ function terminateProccess(){
         icon: "info",
         button: "OK",
     });
+}
+
+
+const changeListEventHandler=(select)=>{
+    if (select.value=='o1-mini') {
+        Swal.fire({
+            title: "Warning",
+            text: "This model is more expensive and take more time.\r\nNote the temperature is not supported for this model.",
+            icon: "warning",
+        })
+    }
 }

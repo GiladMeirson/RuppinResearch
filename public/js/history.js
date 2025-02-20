@@ -27,6 +27,7 @@ function getHistoryData() {
             console.log('AJAX call successful:', response);
             // parse ?
             CreateHistoryDataTable(response.history)
+            H = response.history;
             
         },
         error: function(error) {
@@ -114,7 +115,16 @@ function CreateHistoryDataTable(history) {
 }
 
 
-
+const clacCostForAllExec=()=>{
+    let hyperSum=0;
+    H.forEach((h)=>{
+        qId = h.QuestionID;
+        question = Q.find(q => q.Id === qId);
+        hyperSum+= parseFloat(calcCost(calcTokens(question),h.ModelName));
+        
+    });
+    return hyperSum;
+}
 
 
 
@@ -340,4 +350,67 @@ function formatContent(content) {
     });
 
     return content;
+}
+
+
+
+function calcTokens(quest) {
+    const unitQuest = quest;
+    const answers = unitQuest.answers;
+    const question = unitQuest;
+    let tokens = 0;
+
+    // Remove <p> tags from question body
+    const cleanedQuestionBody = question.Body.replace(/<\/?p>/g, '');
+    tokens += cleanedQuestionBody.split(/\s+/).length;
+
+    answers.forEach((answer) => {
+        // Remove <p> tags from each answer body
+        const cleanedAnswerBody = answer.Body.replace(/<\/?p>/g, '');
+        tokens += cleanedAnswerBody.split(/\s+/).length;
+    });
+
+    return Math.round(tokens*1.16)+1700;
+}
+
+
+function calcCost(tokens,modelName='gpt-4o-mini') {
+    const outputTokensAVG = 2600;
+    let sum = 0;
+
+    if (modelName=='gpt-4o-mini') {
+        const inputCost = tokens / 1000000 * 0.15;
+        const outputCost = outputTokensAVG/1000000 * 0.6;
+        sum = inputCost + outputCost;
+        
+
+    }
+    if (modelName=='o1-mini') {
+        const inputCost = tokens / 1000000 * 15;
+        const outputCost = outputTokensAVG/1000000 * 60;
+        sum = inputCost + outputCost;
+    }
+    if (modelName=='gemini-1.5-flash') {
+        const inputCost = tokens / 1000000 * 3;
+        const outputCost = outputTokensAVG/1000000 * 6;
+        sum = inputCost + outputCost
+    }
+    if (modelName=='gemini-2.0-flash') {
+        const inputCost = tokens / 1000000 * 10;
+        const outputCost = outputTokensAVG/1000000 * 40;
+        sum = inputCost + outputCost
+    }
+    if (modelName=='gpt-3.5-turbo') {
+        const inputCost = tokens / 1000000 * 3;
+        const outputCost = outputTokensAVG/1000000 * 6;
+        sum = inputCost + outputCost
+    }
+    
+    //sum=sum*100;
+    
+    return sum;
+  
+
+    
+
 }

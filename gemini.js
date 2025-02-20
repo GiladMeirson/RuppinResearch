@@ -24,11 +24,7 @@
   const apiKey = process.env.GOOGLE_GEMINI_KEY;
   const genAI = new GoogleGenerativeAI(apiKey);
   
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    system_instruction : "You are an AI that helps us in research about answer ratings for questions from the stack exchange site your task is to rate the answers to questions and your output is JSON only",
-
-  });
+ 
   
   const generationConfig = {
     temperature: 1,
@@ -38,8 +34,12 @@
     responseMimeType: "text/plain",
   };
   
-  export async function AskGemini(inputText,temp=1) {
-
+  export async function AskGemini(inputText,temp=1,modelN) {
+    const model = genAI.getGenerativeModel({
+      model: modelN,
+      system_instruction : "You are an AI that helps us in research about answer ratings for questions from the stack exchange site your task is to rate the answers to questions and your output is JSON only",
+  
+    });
 
     generationConfig.temperature = temp;
     const chatSession = model.startChat({

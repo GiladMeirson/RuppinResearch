@@ -69,10 +69,10 @@ app.post('/AskAi', async (req, res) => {
       }
       const temp  = parseFloat(req.body.temp);
       
-      if (req.body.model ==='gemini-1.5') {
-         aiResult = await AskGemini(inputText,temp); // Use the run function from the provided code
+      if (req.body.model ==='gemini-1.5-flash' || req.body.model ==='gemini-2.0-flash' ){
+         aiResult = await AskGemini(inputText,temp,req.body.model); // Use the run function from the provided code
       }
-      else if (req.body.model ==='gpt-3.5-turbo' || req.body.model ==='gpt-4o-mini') {
+      else if (req.body.model ==='gpt-3.5-turbo' || req.body.model ==='gpt-4o-mini' || req.body.model ==='o1-mini') {
          aiResult = await AskOpenAI(inputText,temp,req.body.model); // Use the run function from the provided code
          //remember there is usage in the response can be used to track the usage (for a later stage)
          aiResult = aiResult.text;
