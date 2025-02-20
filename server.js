@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import compression from 'compression';
 import { AskGemini } from './gemini.js';
 import { AskOpenAI } from './openai.js';
+import { AskGrok } from './grok.js';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import cors from 'cors';
@@ -77,6 +78,9 @@ app.post('/AskAi', async (req, res) => {
          //remember there is usage in the response can be used to track the usage (for a later stage)
          aiResult = aiResult.text;
 
+      }
+      else if (req.body.model ==='grok-2.0') {
+        aiResult = await AskGrok(inputText,temp); // Use the run function from the provided code
       }
 
       //console.log('aiResult',aiResult);

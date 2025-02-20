@@ -1059,12 +1059,12 @@ function calcTokens(unitQuestSerialNum) {
         tokens += cleanedAnswerBody.split(/\s+/).length;
     });
 
-    return Math.round(tokens*1.1)+700;
+    return Math.round(tokens*1.1)+1700;
 }
 
 
 function calcCost(tokens,modelName='gpt-4o-mini') {
-    const outputTokensAVG = 1611;
+    const outputTokensAVG = 1911;
     let sum = 0;
 
     if (modelName=='gpt-4o-mini') {
@@ -1092,6 +1092,12 @@ function calcCost(tokens,modelName='gpt-4o-mini') {
     if (modelName=='gpt-3.5-turbo') {
         const inputCost = tokens / 1000000 * 3;
         const outputCost = outputTokensAVG/1000000 * 6;
+        sum = inputCost + outputCost
+    }
+    if(modelName == 'grok-2.0')
+    {
+        const inputCost = tokens / 1000000 * 3;
+        const outputCost = outputTokensAVG/1000000 * 10;
         sum = inputCost + outputCost
     }
     
