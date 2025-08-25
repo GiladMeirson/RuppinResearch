@@ -76,7 +76,7 @@ The repository is organized as follows:
 
 ## Getting Started
 
-npm install @google-cloud/vertexai @google/generative-ai body compression cors dotenv express mssql openai pako parser
+npm install @google-cloud/vertexai @google/generative-ai body compression cors dotenv express mssql openai pako parser @anthropic-ai/sdk
 npm start
 
 ## Contributors
