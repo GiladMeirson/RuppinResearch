@@ -4,6 +4,8 @@ import { AskOpenAI } from "./openai.js";
 import { AskGrok } from "./grok.js";
 import { askClaude } from "./claude.js";
 import { askDeepSeek } from "./deepseek.js";
+import fs from "fs";
+import path from "path";
 
 // Function to clean the string
 export function cleanJsonString(str) {
@@ -86,5 +88,55 @@ export const AiSwitcher = (inputText, modelName, temp) => {
       return AskGemini(inputText, temp, modelName);
     default:
       throw new Error(`Unsupported model: ${modelName}`);
+  }
+};
+
+export const WriteErrorToErrFile = (err, title = "Error", status = null) => {
+  try {
+    const logsDir = path.join(process.cwd(), "logs");
+    const errorFile = path.join(logsDir, "err.txt");
+
+    // Create logs directory if it doesn't exist
+    if (!fs.existsSync(logsDir)) {
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+
+    const timestamp = new Date()
+      .toISOString()
+      .replace("T", " ")
+      .substring(0, 19);
+    const separator = "*".repeat(49);
+
+    let errorMessage = "";
+    let errorStatus = status || "Unknown";
+
+    // Handle different error types
+    if (err instanceof Error) {
+      errorMessage = err.message;
+      if (err.stack) {
+        errorMessage += `\nStack trace: ${err.stack}`;
+      }
+    } else if (typeof err === "object") {
+      errorStatus = err.status || err.statusCode || errorStatus;
+      errorMessage = err.message || JSON.stringify(err, null, 2);
+    } else {
+      errorMessage = String(err);
+    }
+
+    const logEntry = `
+${separator}
+${timestamp}
+${title}
+${errorStatus}
+${errorMessage}
+${separator}
+
+`;
+
+    // Append to error log file
+    fs.appendFileSync(errorFile, logEntry, "utf8");
+    console.log(`Error logged to: ${errorFile}`);
+  } catch (logError) {
+    console.error("Failed to write error to log file:", logError);
   }
 };

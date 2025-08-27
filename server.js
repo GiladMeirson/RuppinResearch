@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 import path from "path";
 import cors from "cors";
 import Pako from "pako";
-import { transformData, cleanJsonString, AiSwitcher } from "./utils.js";
+import { transformData, cleanJsonString, AiSwitcher,WriteErrorToErrFile } from "./utils.js";
 import dotenv from "dotenv";
 
 import {
@@ -103,6 +103,7 @@ async function validateInputData(req, res) {
 
     // Check for missing required fields
     if (!inputText) {
+      WriteErrorToErrFile(null, "Missing Input Text", 400);
       res.status(400).json({
         success: false,
         errorName: "Missing Input Text",
@@ -112,6 +113,7 @@ async function validateInputData(req, res) {
     }
 
     if (!runID) {
+      WriteErrorToErrFile(null, "Missing Run ID", 400);
       res.status(400).json({
         success: false,
         errorName: "Missing Run ID",
@@ -121,6 +123,7 @@ async function validateInputData(req, res) {
     }
 
     if (!fullPromptObject || !fullPromptObject.promptID) {
+      WriteErrorToErrFile(null, "Missing Prompt Object", 400);
       res.status(400).json({
         success: false,
         errorName: "Missing Prompt Object",
@@ -130,6 +133,7 @@ async function validateInputData(req, res) {
     }
 
     if (isNaN(temp)) {
+      WriteErrorToErrFile(null, "Invalid Temperature", 400);
       res.status(400).json({
         success: false,
         errorName: "Invalid Temperature",
@@ -141,6 +145,7 @@ async function validateInputData(req, res) {
     return { inputText, runID, fullPromptObject, temp };
 
   } catch (error) {
+    WriteErrorToErrFile(error, "Input Validation Error", 400);
     console.error("Error validating input data:", error);
     res.status(400).json({
       success: false,
@@ -158,6 +163,7 @@ async function callAiService(inputText, model, temp, res) {
     const aiResult = await AiSwitcher(inputText, model, temp);
     
     if (!aiResult) {
+      WriteErrorToErrFile(null, "AI Service Error", 502);
       res.status(502).json({
         success: false,
         errorName: "AI Service Error",
@@ -174,24 +180,28 @@ async function callAiService(inputText, model, temp, res) {
     
     // Check for specific AI service errors
     if (error.message.includes('rate limit') || error.message.includes('quota')) {
+      WriteErrorToErrFile(error, "AI Service Rate Limit", 429);
       res.status(429).json({
         success: false,
         errorName: "AI Service Rate Limit",
         message: "AI service rate limit exceeded. Please try again later."
       });
     } else if (error.message.includes('authentication') || error.message.includes('unauthorized')) {
+      WriteErrorToErrFile(error, "AI Service Authentication Error", 401);
       res.status(401).json({
         success: false,
         errorName: "AI Service Authentication Error",
         message: "AI service authentication failed"
       });
     } else if (error.message.includes('timeout')) {
+      WriteErrorToErrFile(error, "AI Service Timeout", 504);
       res.status(504).json({
         success: false,
         errorName: "AI Service Timeout",
         message: "AI service request timed out"
       });
     } else {
+      WriteErrorToErrFile(error, "AI Service Error", 502);
       res.status(502).json({
         success: false,
         errorName: "AI Service Error",
@@ -205,10 +215,12 @@ async function callAiService(inputText, model, temp, res) {
 
 // Helper function: Process AI response
 async function processAiResponse(aiResult, model, res) {
+  
   try {
     const resString = cleanJsonString(aiResult);
     
     if (!resString) {
+      WriteErrorToErrFile(null, "AI Response Processing Error", 422);
       res.status(422).json({
         success: false,
         errorName: "AI Response Processing Error",
@@ -220,6 +232,7 @@ async function processAiResponse(aiResult, model, res) {
     const resParsed = JSON.parse(resString);
     
     if (!resParsed) {
+      WriteErrorToErrFile(null, "JSON Parsing Error", 422);
       res.status(422).json({
         success: false,
         errorName: "JSON Parsing Error",
@@ -231,6 +244,7 @@ async function processAiResponse(aiResult, model, res) {
     const execuationObj = transformData(resParsed, model);
     
     if (!execuationObj || execuationObj.length === 0) {
+      WriteErrorToErrFile(null, "Data Transformation Error", 422);
       res.status(422).json({
         success: false,
         errorName: "Data Transformation Error",
@@ -242,6 +256,7 @@ async function processAiResponse(aiResult, model, res) {
     return execuationObj;
 
   } catch (error) {
+    WriteErrorToErrFile(error, "AI Response Processing Error", 422);
     console.error("Error processing AI response:", error);
     
     if (error instanceof SyntaxError) {
@@ -276,6 +291,7 @@ async function executeDbInsertion(execuationObj, fullPromptObject, temp, runID, 
     );
 
     if (!resultexecute) {
+      WriteErrorToErrFile(null, "Database Insertion Error", 500);
       res.status(500).json({
         success: false,
         errorName: "Database Insertion Error",
@@ -287,28 +303,33 @@ async function executeDbInsertion(execuationObj, fullPromptObject, temp, runID, 
     return resultexecute;
 
   } catch (error) {
+    //WriteErrorToErrFile(error, "Database Insertion Error", 500);
     console.error("Error executing database insertion:", error);
     
     // Check for specific database errors
     if (error.message.includes('connection') || error.message.includes('timeout')) {
+      WriteErrorToErrFile(error, "Database Connection Error", 503);
       res.status(503).json({
         success: false,
         errorName: "Database Connection Error",
         message: "Database connection failed or timed out"
       });
     } else if (error.message.includes('constraint') || error.message.includes('duplicate')) {
+      WriteErrorToErrFile(error, "Database Constraint Error", 409);
       res.status(409).json({
         success: false,
         errorName: "Database Constraint Error",
         message: "Data violates database constraints or already exists"
       });
     } else if (error.message.includes('permission') || error.message.includes('access')) {
+      WriteErrorToErrFile(error, "Database Permission Error", 403);
       res.status(403).json({
         success: false,
         errorName: "Database Permission Error",
         message: "Insufficient permissions to perform database operation"
       });
     } else {
+      WriteErrorToErrFile(error, "Database Error", 500);
       res.status(500).json({
         success: false,
         errorName: "Database Error",
@@ -344,6 +365,7 @@ app.post("/insertExecuation", async (req, res) => {
     const result = await executeSpInsertToExecution(questionObject); // Use the provided function to insert the question object
     res.json({ result });
   } catch (error) {
+    WriteErrorToErrFile(error, "Database Insertion Error", 500);
     console.error("Error inserting question:", error);
     res.status(500).send("Internal Server Error");
   }
