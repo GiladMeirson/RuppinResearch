@@ -370,47 +370,50 @@ function calcTokens(quest) {
         tokens += cleanedAnswerBody.split(/\s+/).length;
     });
 
-    return Math.round(tokens*1.16)+1700;
+    return Math.round(tokens*1.8)+2200;
 }
 
+function calcCost(tokens, modelName = "gpt-5") {
+  const outputTokensAVG = 1911; // average output tokens
+  let sum = 0;
 
-function calcCost(tokens,modelName='gpt-4o-mini') {
-    const outputTokensAVG = 2600;
-    let sum = 0;
+  // Verified pricing per 1M tokens
+  const modelPricing = {
+    // OpenAI
+    "gpt-5": { input: 1.25, output: 10 },
+    "gpt-3.5-turbo": { input: 3, output: 6 },
+    "gpt-4o": { input: 2.5, output: 10 },
+    o1: { input: 15, output: 60 }, // Reasoning
+    "gpt-4o-mini": { input: 0.75, output: 3 },
+    "o1-mini": { input: 7.5, output: 30 },
 
-    if (modelName=='gpt-4o-mini') {
-        const inputCost = tokens / 1000000 * 0.15;
-        const outputCost = outputTokensAVG/1000000 * 0.6;
-        sum = inputCost + outputCost;
-        
+    // --- ANTHROPIC ---
+    "claude-sonnet-4-20250514": { input: 3, output: 15 },
+    "claude-3-5-sonnet-20241022": { input: 3, output: 15 },
 
-    }
-    if (modelName=='o1-mini') {
-        const inputCost = tokens / 1000000 * 15;
-        const outputCost = outputTokensAVG/1000000 * 60;
-        sum = inputCost + outputCost;
-    }
-    if (modelName=='gemini-1.5-flash') {
-        const inputCost = tokens / 1000000 * 3;
-        const outputCost = outputTokensAVG/1000000 * 6;
-        sum = inputCost + outputCost
-    }
-    if (modelName=='gemini-2.0-flash') {
-        const inputCost = tokens / 1000000 * 10;
-        const outputCost = outputTokensAVG/1000000 * 40;
-        sum = inputCost + outputCost
-    }
-    if (modelName=='gpt-3.5-turbo') {
-        const inputCost = tokens / 1000000 * 3;
-        const outputCost = outputTokensAVG/1000000 * 6;
-        sum = inputCost + outputCost
-    }
-    
-    //sum=sum*100;
-    
-    return sum;
-  
+    // Google Gemini
+    "gemini-2.5-flash": { input: 0.3, output: 2.5 },
+    "gemini-2.0-flash": { input: 0.3, output: 2.5 },
+    "gemini-1.5-flash": { input: 0.3, output: 2.5 },
 
-    
+    // --- DEEPSEEK ---
+    "deepseek-chat": { input: 0.27, output: 1.1 },
+    "deepseek-coder": { input: 0.55, output: 2.19 },
 
+    // xAI Grok
+    "grok-3": { input: 3.0, output: 15.0 },
+    "grok-2.0": { input: 2.0, output: 10.0 },
+    "grok-4-0709": { input: 3, output: 15 },
+  };
+
+  if (modelPricing[modelName]) {
+    const { input, output } = modelPricing[modelName];
+    const inputCost = (tokens / 1_000_000) * input;
+    const outputCost = (outputTokensAVG / 1_000_000) * output;
+    sum = inputCost + outputCost;
+  } else {
+    throw new Error(`Pricing for model "${modelName}" is not defined.`);
+  }
+
+  return (sum * 100).toFixed(2); // scaled cost, as per your pattern
 }

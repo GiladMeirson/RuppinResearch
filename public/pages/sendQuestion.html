@@ -1,357 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StackExchange-LLM Research Main</title>
-   
-     <!-- Include jQuery only once -->
-     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-     <!-- Include jQuery UI -->
-     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
-     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
- 
-     <!-- Other scripts and stylesheets -->
-     <link rel="stylesheet" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
-     <script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
 
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
+    <!-- Include jQuery only once -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Include jQuery UI -->
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <link rel="stylesheet"
+      href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
 
+    <!-- Other scripts and stylesheets -->
+    <link rel="stylesheet"
+      href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+    <script
+      src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
 
-     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-     <script src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
-     <link rel="icon" href="../assets/android-chrome-512x512.png" type="image/x-icon">
-     <script src="../js/master.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js"></script>
 
-     <link rel="stylesheet" href="../css/style.css">
-</head>
-<body>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/notify/0.4.2/notify.min.js"></script>
+    <link rel="icon" href="../assets/android-chrome-512x512.png"
+      type="image/x-icon">
+    <script src="../js/master.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+  </head>
+  <body>
     <header>
-      
-        <!-- <h1>StackBrain</h1> -->
-        <img class="mainLogo" src="../assets/logo2.png" alt="">
+
+      <!-- <h1>StackBrain</h1> -->
+      <img class="mainLogo" src="../assets/logo2.png" alt>
     </header>
     <nav>
-        <ul>
-            <li><a href="#" class="active">Send Questions</a></li>
-            <li><a href="./history.html">History</a></li>
-            <li><a href="./analysis.html">Analysis</a></li>
-        </ul>
+      <ul>
+        <li><a href="#" class="active">Send Questions</a></li>
+        <li><a href="./history.html">History</a></li>
+        <li><a href="./analysis.html">Analysis</a></li>
+      </ul>
     </nav>
     <main>
-        <div class="container">
-            <!-- New CSV upload section -->
-             <h3 onclick="showQuery()" class="clickable">Note* - The query should hold the columns as in the query shown (click to see the basic query)</h3>
-            <h3>Load data from CSV file</h3>
-            <div class="csv-upload">
-                
-                <input type="file" id="csvFileInput" accept=".csv">
-                <button disabled id="sendToDB">Upload CSV to DB</button>
-            </div>
+      <div class="container">
+        <!-- New CSV upload section -->
+        <h3 onclick="showQuery()" class="clickable">Note* - The query should
+          hold the columns as in the query shown (click to see the basic
+          query)</h3>
+        <h3>Load data from CSV file</h3>
+        <div class="csv-upload">
 
-            <h3>Send question & answers to LLM model</h3>
-            <div class="actions">
-
-              <div class="wrapPromptConfig">
-                <button onclick="showWrap()" id="EditwrapPromptConfig">✏️ Edit prompt wrapper</button>
-              </div>
-
-                <div class="select-model">
-                    <select id="model-select" onchange="changeListEventHandler(this)">
-                        <option value="">Select a model</option>
-                        <option value="gemini-1.5-flash">Gemini 1.5</option>
-                        <option style="color: gray;" value="gemini-2.0-flash">Gemini 2.0</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
-                        <option value="gpt-4o-mini">GPT-4o</option>
-                        <option style="color: gray;" value="o1-mini">GPT-o1-Reasoning</option>
-                        <option value="grok-2.0">Grok-2.0</option>
-                    </select>
-                </div>
-
-                <div class="temperature-control">
-                    <label for="temperature-slider">Temperature:</label>
-                    <input type="range" id="temperature-slider" min="0" max="2" step="0.1" value="1">
-                    <span id="temperature-value">1</span>
-                </div>
-                <button class="send-button">Send Selected Questions</button>
-
-                
-            </div>
-            <div class="table-container">
-                <table id="question-table" class="display">
-                    <thead>
-                        <tr>
-                            <th><input type="checkbox" id="select-all-checkbox"></th>
-                            <th>SQL ID</th>
-                            <th>Question ID</th>
-                            <th>Title</th>
-                            <th>Creation Date</th>
-                            <th>Score</th>
-                            <th>View Count</th>
-                            <th>Answer Count</th>
-                            <th>Tags</th>
-                            <th>Batch</th>
-                            <th>Model</th>
-                            <th>Temp</th>
-                            <th>~ Tokens</th>
-                            <th>~ Cost</th>
-                        </tr>
-                    </thead>
-                </table>
-            </div>
+          <input type="file" id="csvFileInput" accept=".csv">
+          <button disabled id="sendToDB">Upload CSV to DB</button>
         </div>
+
+        <h3>Send question & answers to LLM model</h3>
+        <div class="actions">
+
+          <div class="wrapPromptConfig">
+            <button onclick="showWrap()" id="EditwrapPromptConfig">✏️ Edit
+              prompt wrapper</button>
+          </div>
+
+          <div class="select-model">
+            <select id="model-select" onchange="changeListEventHandler(this)">
+              <option value>Select a model</option>
+              <!-- OPEN AI MODELS -->
+              <option value="gpt-5">GPT-5 (Reasoning)</option>
+              <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="o1">GPT-o1 (Reasoning)</option>
+              <!-- ANTROPIC MODELS -->
+              <option value="claude-sonnet-4-20250514">claude-sonnet-4</option>
+              <option
+                value="claude-3-5-sonnet-20241022">claude-3.5-sonnet</option>
+              <!-- X MODELS -->
+              <option value="grok-4-0709">Grok-4</option>
+              <option value="grok-3">Grok-3</option>
+              <!-- GOOGLE MODELS -->
+              <option value="gemini-2.5-flash">Gemini 2.5 flash</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 flash</option>
+              <!-- DEEPSEEK MODELS -->
+              <option value="deepseek-chat">DeepSeek-V3.1</option>
+              <option value="deepseek-coder">DeepSeek-Coder-V2</option>
+            </select>
+          </div>
+
+          <div class="temperature-control">
+            <label for="temperature-slider">Temperature:</label>
+            <input type="range" id="temperature-slider" min="0" max="2"
+              step="0.1" value="1">
+            <span id="temperature-value">1</span>
+          </div>
+          <button class="send-button">Send Selected Questions</button>
+
+        </div>
+        <div class="table-container">
+          <table id="question-table" class="display">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="select-all-checkbox"></th>
+                <th>SQL ID</th>
+                <th>Question ID</th>
+                <th>Title</th>
+                <th>Creation Date</th>
+                <th>Score</th>
+                <th>View Count</th>
+                <th>Answer Count</th>
+                <th>Tags</th>
+                <th>Batch</th>
+                <th>Model</th>
+                <th>Temp</th>
+                <th>~ Tokens</th>
+                <th>~ Cost</th>
+              </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
     </main>
 
-
-
-
-
-
-
-     <!-- Modal for BatchID input -->
+    <!-- Modal for BatchID input -->
     <div id="batchIDModal" class="modal">
-        <div class="modal-content">
-            <h3 id="IdentifiedLabel">
-                Identified - <br>
-                Questions: X <br>
-                Answers: X
-            </h3>
-            <hr>
-            <h2>Enter Batch ID</h2>
-            <input type="text" id="batchIDInput">
-            <button id="confirmBatchID">Confirm</button>
-        </div>
+      <div class="modal-content">
+        <h3 id="IdentifiedLabel">
+          Identified - <br>
+          Questions: X <br>
+          Answers: X
+        </h3>
+        <hr>
+        <h2>Enter Batch ID</h2>
+        <input type="text" id="batchIDInput">
+        <button id="confirmBatchID">Confirm</button>
+      </div>
     </div>
 
-    <div id="loading" >
-        <img src="../assets/loading.gif" alt="">
+    <div id="loading">
+      <img src="../assets/loading.gif" alt>
     </div>
 
     <div id="BaseQuery">
-        <div id="btnRow">
-            <button onclick="hideQuery()">❌</button>
-            <button title="Copy Query" onclick="copyQuery()">🔗</button>
-        </div>
-        <p id="theQueryText">
-            DECLARE @startQuestionID AS int;
-SET @startQuestionID = 5000000;
+      <div id="btnRow">
+        <button onclick="hideQuery()">❌</button>
+        <button title="Copy Query" onclick="copyQuery()">🔗</button>
+      </div>
+      <p id="theQueryText">
+        DECLARE @startQuestionID AS int;
+        SET @startQuestionID = 5000000;
 
-DECLARE @numAnswers AS int;
-SET @numAnswers = 5;
+        DECLARE @numAnswers AS int;
+        SET @numAnswers = 5;
 
-DECLARE @MinGoodScore AS float;
-SET @MinGoodScore = 32;
+        DECLARE @MinGoodScore AS float;
+        SET @MinGoodScore = 32;
 
-DECLARE @MaxMediumScore AS float;
-SET @MaxMediumScore = 16;
+        DECLARE @MaxMediumScore AS float;
+        SET @MaxMediumScore = 16;
 
-DECLARE @MinMediumScore AS float;
-SET @MinMediumScore = 8;
+        DECLARE @MinMediumScore AS float;
+        SET @MinMediumScore = 8;
 
-DECLARE @factor2 AS float;
-DECLARE @factor3 AS float;
-DECLARE @factor4 AS float;
-DECLARE @factor5 AS float;
+        DECLARE @factor2 AS float;
+        DECLARE @factor3 AS float;
+        DECLARE @factor4 AS float;
+        DECLARE @factor5 AS float;
 
-SET @factor2 = 1.479601;
-SET @factor3 = 2.05682;
-SET @factor4 = 2.823545;
-SET @factor5 = 4.002532;
+        SET @factor2 = 1.479601;
+        SET @factor3 = 2.05682;
+        SET @factor4 = 2.823545;
+        SET @factor5 = 4.002532;
 
-WITH QuestionsWithExactly5Answers AS (
-  SELECT TOP 1000
-    q.Id AS QId,
-    q.AcceptedAnswerId AS QAcceptedAnswerId,
-    q.CreationDate AS QCreationDate,
-    q.DeletionDate AS QDeletionDate,
-    q.Score AS QScore,
-    q.ViewCount AS QViewCount,
-    q.Body AS QBody,
-    q.OwnerUserId AS QOwnerUserId,
-    q.OwnerDisplayName AS QOwnerDisplayName,
-    q.LastEditorUserId AS QLastEditorUserId,
-    q.LastEditorDisplayName AS QLastEditorDisplayName,
-    q.LastEditDate AS QLastEditDate,
-    q.LastActivityDate AS QLastActivityDate,
-    q.Title AS QTitle,
-    q.Tags AS QTags,
-    q.AnswerCount AS QAnswerCount,
-    q.CommentCount AS QCommentCount,
-    q.FavoriteCount AS QFavoriteCount,
-    q.ClosedDate AS QClosedDate,
-    q.CommunityOwnedDate AS QCommunityOwnedDate,
-    q.ContentLicense AS QContentLicense
-  FROM 
-    Posts q
-  WHERE 
-    q.PostTypeId = 1 -- Questions only
-    AND q.Id > @startQuestionID
-    AND @numAnswers = (SELECT COUNT(*) FROM Posts a WHERE a.ParentId = q.Id AND a.PostTypeId = 2)
-  ORDER BY
-    q.CreationDate
-),
-AnswersWithNormalizedScores AS (
-  SELECT 
-    a.Id AS AId,
-    a.AcceptedAnswerId AS AAcceptedAnswerId,
-    a.CreationDate AS ACreationDate,
-    a.DeletionDate AS ADeletionDate,
-    a.Score AS AScore,
-    a.ParentId AS AParentId,
-    a.ViewCount AS AViewCount,
-    a.Body AS ABody,
-    a.OwnerUserId AS AOwnerUserId,
-    a.OwnerDisplayName AS AOwnerDisplayName,
-    a.LastEditorUserId AS ALastEditorUserId,
-    a.LastEditorDisplayName AS ALastEditorDisplayName,
-    a.LastEditDate AS ALastEditDate,
-    a.LastActivityDate AS ALastActivityDate,
-    a.Title AS ATitle,
-    a.Tags AS ATags,
-    a.AnswerCount AS AAnswerCount,
-    a.CommentCount AS ACommentCount,
-    a.FavoriteCount AS AFavoriteCount,
-    a.ClosedDate AS AClosedDate,
-    a.CommunityOwnedDate AS ACommunityOwnedDate,
-    a.ContentLicense AS AContentLicense,
-    q.*,
-    ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) AS AnswerOrder,
-    CASE 
-      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 1 THEN a.Score
-      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 2 THEN a.Score * @factor2
-      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 3 THEN a.Score * @factor3
-      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 4 THEN a.Score * @factor4
-      WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) = 5 THEN a.Score * @factor5
-    END AS NormalizedScore,
-    CAST(RAND(CHECKSUM(NEWID())) * 1000000 AS INT) AS RandomRank
-  FROM 
-    Posts a
-  INNER JOIN QuestionsWithExactly5Answers q ON a.ParentId = q.QId
-  WHERE 
-    a.PostTypeId = 2 -- Answers only
-),
-LabeledScores AS (
-  SELECT 
-    *,
-    CASE
-      WHEN NormalizedScore <= 0 THEN 'bad'
-      WHEN NormalizedScore > @MinGoodScore THEN 'good'
-      WHEN NormalizedScore BETWEEN @MinMediumScore AND @MaxMediumScore THEN 'medium'
-      ELSE NULL
-    END AS Label,
-    ROW_NUMBER() OVER (PARTITION BY AParentId, 
-                       CASE 
-                         WHEN NormalizedScore <= 0 THEN 'bad'
-                         WHEN NormalizedScore > @MinGoodScore THEN 'good'
-                         WHEN NormalizedScore BETWEEN @MinMediumScore AND @MaxMediumScore THEN 'medium'
-                         ELSE NULL
-                       END
-                       ORDER BY 
-                         CASE 
-                           WHEN NormalizedScore <= 0 THEN NormalizedScore
-                           WHEN NormalizedScore > @MinGoodScore THEN NormalizedScore
-                           ELSE RandomRank
-                         END DESC,
-                         CASE WHEN NormalizedScore <= 0 THEN RandomRank ELSE NULL END
-    ) AS LabelRank
-  FROM 
-    AnswersWithNormalizedScores
-),
-FilteredQuestions AS (
-  SELECT DISTINCT AParentId
-  FROM LabeledScores
-  GROUP BY AParentId
-  HAVING 
-    SUM(CASE WHEN Label = 'bad' THEN 1 ELSE 0 END) > 0
-    AND SUM(CASE WHEN Label = 'good' THEN 1 ELSE 0 END) > 0
-    AND SUM(CASE WHEN Label = 'medium' THEN 1 ELSE 0 END) > 0
-)
-SELECT TOP 100
-  -- Question fields
-  ls.QId,
-  ls.QAcceptedAnswerId,
-  ls.QCreationDate,
-  ls.QDeletionDate,
-  ls.QScore,
-  ls.QViewCount,
-  ls.QBody,
-  ls.QOwnerUserId,
-  ls.QOwnerDisplayName,
-  ls.QLastEditorUserId,
-  ls.QLastEditorDisplayName,
-  ls.QLastEditDate,
-  ls.QLastActivityDate,
-  ls.QTitle,
-  ls.QTags,
-  ls.QAnswerCount,
-  ls.QCommentCount,
-  ls.QFavoriteCount,
-  ls.QClosedDate,
-  ls.QCommunityOwnedDate,
-  ls.QContentLicense,
-  
-  -- Answer fields
-  ls.AId,
-  ls.AAcceptedAnswerId,
-  ls.ACreationDate,
-  ls.ADeletionDate,
-  ls.AScore,
-  ls.AParentId,
-  ls.AViewCount,
-  ls.ABody,
-  ls.AOwnerUserId,
-  ls.AOwnerDisplayName,
-  ls.ALastEditorUserId,
-  ls.ALastEditorDisplayName,
-  ls.ALastEditDate,
-  ls.ALastActivityDate,
-  ls.ATitle,
-  ls.ATags,
-  ls.AAnswerCount,
-  ls.ACommentCount,
-  ls.AFavoriteCount,
-  ls.AClosedDate,
-  ls.ACommunityOwnedDate,
-  ls.AContentLicense,
-  
-  -- Computed fields
-  ls.AnswerOrder,
-  ls.NormalizedScore,
-  ls.RandomRank,
-  ls.Label,
-  ls.LabelRank
-FROM 
-  LabeledScores ls
-INNER JOIN FilteredQuestions fq ON ls.AParentId = fq.AParentId
-WHERE 
-  ls.Label IS NOT NULL
-  AND (
-    (ls.Label = 'bad' AND ls.LabelRank = 1)
-    OR (ls.Label = 'good' AND ls.LabelRank = 1)
-    OR ls.Label = 'medium'
-  )
-ORDER BY
-  ls.AParentId,
-  CASE ls.Label
-    WHEN 'bad' THEN 1
-    WHEN 'good' THEN 2
-    WHEN 'medium' THEN 3
-  END,
-  ls.NormalizedScore DESC
-        </p>
+        WITH QuestionsWithExactly5Answers AS (
+        SELECT TOP 1000
+        q.Id AS QId,
+        q.AcceptedAnswerId AS QAcceptedAnswerId,
+        q.CreationDate AS QCreationDate,
+        q.DeletionDate AS QDeletionDate,
+        q.Score AS QScore,
+        q.ViewCount AS QViewCount,
+        q.Body AS QBody,
+        q.OwnerUserId AS QOwnerUserId,
+        q.OwnerDisplayName AS QOwnerDisplayName,
+        q.LastEditorUserId AS QLastEditorUserId,
+        q.LastEditorDisplayName AS QLastEditorDisplayName,
+        q.LastEditDate AS QLastEditDate,
+        q.LastActivityDate AS QLastActivityDate,
+        q.Title AS QTitle,
+        q.Tags AS QTags,
+        q.AnswerCount AS QAnswerCount,
+        q.CommentCount AS QCommentCount,
+        q.FavoriteCount AS QFavoriteCount,
+        q.ClosedDate AS QClosedDate,
+        q.CommunityOwnedDate AS QCommunityOwnedDate,
+        q.ContentLicense AS QContentLicense
+        FROM
+        Posts q
+        WHERE
+        q.PostTypeId = 1 -- Questions only
+        AND q.Id > @startQuestionID
+        AND @numAnswers = (SELECT COUNT(*) FROM Posts a WHERE a.ParentId = q.Id
+        AND a.PostTypeId = 2)
+        ORDER BY
+        q.CreationDate
+        ),
+        AnswersWithNormalizedScores AS (
+        SELECT
+        a.Id AS AId,
+        a.AcceptedAnswerId AS AAcceptedAnswerId,
+        a.CreationDate AS ACreationDate,
+        a.DeletionDate AS ADeletionDate,
+        a.Score AS AScore,
+        a.ParentId AS AParentId,
+        a.ViewCount AS AViewCount,
+        a.Body AS ABody,
+        a.OwnerUserId AS AOwnerUserId,
+        a.OwnerDisplayName AS AOwnerDisplayName,
+        a.LastEditorUserId AS ALastEditorUserId,
+        a.LastEditorDisplayName AS ALastEditorDisplayName,
+        a.LastEditDate AS ALastEditDate,
+        a.LastActivityDate AS ALastActivityDate,
+        a.Title AS ATitle,
+        a.Tags AS ATags,
+        a.AnswerCount AS AAnswerCount,
+        a.CommentCount AS ACommentCount,
+        a.FavoriteCount AS AFavoriteCount,
+        a.ClosedDate AS AClosedDate,
+        a.CommunityOwnedDate AS ACommunityOwnedDate,
+        a.ContentLicense AS AContentLicense,
+        q.*,
+        ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate) AS
+        AnswerOrder,
+        CASE
+        WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate)
+        = 1 THEN a.Score
+        WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate)
+        = 2 THEN a.Score * @factor2
+        WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate)
+        = 3 THEN a.Score * @factor3
+        WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate)
+        = 4 THEN a.Score * @factor4
+        WHEN ROW_NUMBER() OVER (PARTITION BY a.ParentId ORDER BY a.CreationDate)
+        = 5 THEN a.Score * @factor5
+        END AS NormalizedScore,
+        CAST(RAND(CHECKSUM(NEWID())) * 1000000 AS INT) AS RandomRank
+        FROM
+        Posts a
+        INNER JOIN QuestionsWithExactly5Answers q ON a.ParentId = q.QId
+        WHERE
+        a.PostTypeId = 2 -- Answers only
+        ),
+        LabeledScores AS (
+        SELECT
+        *,
+        CASE
+        WHEN NormalizedScore <= 0 THEN 'bad'
+        WHEN NormalizedScore > @MinGoodScore THEN 'good'
+        WHEN NormalizedScore BETWEEN @MinMediumScore AND @MaxMediumScore THEN
+        'medium'
+        ELSE NULL
+        END AS Label,
+        ROW_NUMBER() OVER (PARTITION BY AParentId,
+        CASE
+        WHEN NormalizedScore <= 0 THEN 'bad'
+        WHEN NormalizedScore > @MinGoodScore THEN 'good'
+        WHEN NormalizedScore BETWEEN @MinMediumScore AND @MaxMediumScore THEN
+        'medium'
+        ELSE NULL
+        END
+        ORDER BY
+        CASE
+        WHEN NormalizedScore <= 0 THEN NormalizedScore
+        WHEN NormalizedScore > @MinGoodScore THEN NormalizedScore
+        ELSE RandomRank
+        END DESC,
+        CASE WHEN NormalizedScore <= 0 THEN RandomRank ELSE NULL END
+        ) AS LabelRank
+        FROM
+        AnswersWithNormalizedScores
+        ),
+        FilteredQuestions AS (
+        SELECT DISTINCT AParentId
+        FROM LabeledScores
+        GROUP BY AParentId
+        HAVING
+        SUM(CASE WHEN Label = 'bad' THEN 1 ELSE 0 END) > 0
+        AND SUM(CASE WHEN Label = 'good' THEN 1 ELSE 0 END) > 0
+        AND SUM(CASE WHEN Label = 'medium' THEN 1 ELSE 0 END) > 0
+        )
+        SELECT TOP 100
+        -- Question fields
+        ls.QId,
+        ls.QAcceptedAnswerId,
+        ls.QCreationDate,
+        ls.QDeletionDate,
+        ls.QScore,
+        ls.QViewCount,
+        ls.QBody,
+        ls.QOwnerUserId,
+        ls.QOwnerDisplayName,
+        ls.QLastEditorUserId,
+        ls.QLastEditorDisplayName,
+        ls.QLastEditDate,
+        ls.QLastActivityDate,
+        ls.QTitle,
+        ls.QTags,
+        ls.QAnswerCount,
+        ls.QCommentCount,
+        ls.QFavoriteCount,
+        ls.QClosedDate,
+        ls.QCommunityOwnedDate,
+        ls.QContentLicense,
+
+        -- Answer fields
+        ls.AId,
+        ls.AAcceptedAnswerId,
+        ls.ACreationDate,
+        ls.ADeletionDate,
+        ls.AScore,
+        ls.AParentId,
+        ls.AViewCount,
+        ls.ABody,
+        ls.AOwnerUserId,
+        ls.AOwnerDisplayName,
+        ls.ALastEditorUserId,
+        ls.ALastEditorDisplayName,
+        ls.ALastEditDate,
+        ls.ALastActivityDate,
+        ls.ATitle,
+        ls.ATags,
+        ls.AAnswerCount,
+        ls.ACommentCount,
+        ls.AFavoriteCount,
+        ls.AClosedDate,
+        ls.ACommunityOwnedDate,
+        ls.AContentLicense,
+
+        -- Computed fields
+        ls.AnswerOrder,
+        ls.NormalizedScore,
+        ls.RandomRank,
+        ls.Label,
+        ls.LabelRank
+        FROM
+        LabeledScores ls
+        INNER JOIN FilteredQuestions fq ON ls.AParentId = fq.AParentId
+        WHERE
+        ls.Label IS NOT NULL
+        AND (
+        (ls.Label = 'bad' AND ls.LabelRank = 1)
+        OR (ls.Label = 'good' AND ls.LabelRank = 1)
+        OR ls.Label = 'medium'
+        )
+        ORDER BY
+        ls.AParentId,
+        CASE ls.Label
+        WHEN 'bad' THEN 1
+        WHEN 'good' THEN 2
+        WHEN 'medium' THEN 3
+        END,
+        ls.NormalizedScore DESC
+      </p>
     </div>
-
 
     <div id="WrapModalConfig">
       <button class="wrapBTN" onclick="CloseWrapModalConfig()">❌</button>
       <h1>Edit the prompt:</h1>
       <div class="promptListClassDiv">
-        <select onchange="renderTextArea(this)" class="promptListClass" name="PromptList" id="PromptList">
+        <select onchange="renderTextArea(this)" class="promptListClass"
+          name="PromptList" id="PromptList">
           <option value="-1">NEW PROMPT</option>
         </select>
       </div>
 
-      <textarea name="" id="WrapValue">
+      <textarea name id="WrapValue">
 You are an AI assistant helping me rank answers to questions asked on StackOverflow.
 
 Here is the question:
@@ -383,7 +406,8 @@ Rank these answers from best to worst and add a rating from 1-10 for each one. R
       <div class="modal-content">
         <h3>Enter the name of the prompt</h3>
         <input type="text" id="promptName">
-        <button onclick="savePromptToDB()" class="btnStyle" id="confirmPromptName">Confirm</button>
+        <button onclick="savePromptToDB()" class="btnStyle"
+          id="confirmPromptName">Confirm</button>
       </div>
 
     </div>
@@ -395,7 +419,8 @@ Rank these answers from best to worst and add a rating from 1-10 for each one. R
         <h3>Select delay in seconds</h3>
         <input type="number" id="delayInSeconds" value="5" step="0.5">
         <h3>choose any unique run Id</h3>
-        <input style="cursor: pointer;" ondblclick="generateKey(this)" type="text" id="RunIdIN">
+        <input style="cursor: pointer;" ondblclick="generateKey(this)"
+          type="text" id="RunIdIN">
         <h3 id="costTitleh3">The cost of this run: $50</h3>
         <button id="sendToLLMBTN" class="send-button">CONFIRM</button>
         <button onclick="closeConModal()" class="cancel-button">CANCEL</button>
@@ -404,11 +429,13 @@ Rank these answers from best to worst and add a rating from 1-10 for each one. R
 
     <div id="counterModal" class="modal">
       <div id="contentCounter" class="modal-content">
-        <h1>Questions sent: <span id="counterSpanSent">0</span> / <span id="QuestionLengthSpan">0</span></h1>
-        <button onclick="terminateProccess()" class="cancel-button">TERMINATE</button>
+        <h1>Questions sent: <span id="counterSpanSent">0</span> / <span
+            id="QuestionLengthSpan">0</span></h1>
+        <button onclick="terminateProccess()"
+          class="cancel-button">TERMINATE</button>
       </div>
     </div>
 
     <script src="../js/sendQuest.js"></script>
-</body>
+  </body>
 </html>

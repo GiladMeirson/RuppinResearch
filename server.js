@@ -1,18 +1,19 @@
-import express from 'express';
-import bodyParser from 'body-parser';
-import compression from 'compression';
-import { AskGemini } from './gemini.js';
-import { AskOpenAI } from './openai.js';
-import { AskGrok } from './grok.js';
-import { fileURLToPath } from 'url';
-import path from 'path';
-import cors from 'cors';
-import Pako from 'pako';
-import { transformData, cleanJsonString } from './utils.js';
-import dotenv from 'dotenv';
+import express from "express";
+import bodyParser from "body-parser";
+import compression from "compression";
+import { AskGemini } from "./gemini.js";
+import { AskOpenAI } from "./openai.js";
+import { AskGrok } from "./grok.js";
+import { askClaude } from "./claude.js";
+import { askDeepSeek } from "./deepseek.js";
+import { fileURLToPath } from "url";
+import path from "path";
+import cors from "cors";
+import Pako from "pako";
+import { transformData, cleanJsonString, AiSwitcher } from "./utils.js";
+import dotenv from "dotenv";
 
-import 
-{ 
+import {
   executeSpInsertToExecution,
   getAllExecutionScores,
   InsertToQuestion,
@@ -25,8 +26,8 @@ import
   getdetailedConsistencyModel,
   getModelScores,
   getcoherencyBetweenModels,
-  getDetailEachAnswerOfQuestRankCompare
-} from './DBservices.js';
+  getDetailEachAnswerOfQuestRankCompare,
+} from "./DBservices.js";
 
 //for .env file
 dotenv.config();
@@ -41,298 +42,493 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 app.use(compression());
 
 // Use raw body parser for the /insertAnswers route
-app.use('/insertAnswers', bodyParser.raw({ type: 'application/octet-stream', limit: '100mb' }));
+app.use(
+  "/insertAnswers",
+  bodyParser.raw({ type: "application/octet-stream", limit: "100mb" })
+);
 
 // Increase the payload limit
-app.use(bodyParser.json({ limit: '100mb' }));
-app.use(bodyParser.urlencoded({ limit: '100mb', extended: true }));
+app.use(bodyParser.json({ limit: "100mb" }));
+app.use(bodyParser.urlencoded({ limit: "100mb", extended: true }));
 
 // Use the cors middleware to allow access from any origin
 app.use(cors());
 
-
 // Serve static files from the 'public' directory
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // POST route to receive a string and return a string using the run function
-app.post('/AskAi', async (req, res) => {
+app.post("/AskAi", async (req, res) => {
+  try {
+    // Step 1: Validate input data
+    const { inputText, runID, fullPromptObject, temp } = await validateInputData(req, res);
+    if (!inputText || !runID || !fullPromptObject) return; // Response already sent in validation
 
-    let aiResult = null;
-  
-    try {
-      const inputText = req.body.text;
-      const runID = req.body.RunId;
-      
-      const fullPromptObject = req.body.prompt; // Assuming the input text is sent in the body with key 'text'
-      const promptID = fullPromptObject.promptID;
-      if (!inputText) {
-        return res.status(400).send('No text provided');
-      }
-      const temp  = parseFloat(req.body.temp);
-      
-      if (req.body.model ==='gemini-1.5-flash' || req.body.model ==='gemini-2.0-flash' ){
-         aiResult = await AskGemini(inputText,temp,req.body.model); // Use the run function from the provided code
-      }
-      else if (req.body.model ==='gpt-3.5-turbo' || req.body.model ==='gpt-4o-mini' || req.body.model ==='o1-mini') {
-         aiResult = await AskOpenAI(inputText,temp,req.body.model); // Use the run function from the provided code
-         //remember there is usage in the response can be used to track the usage (for a later stage)
-         aiResult = aiResult.text;
+    // Step 2: Call AI service
+    const aiResult = await callAiService(inputText, req.body.model, temp, res);
+    if (!aiResult) return; // Response already sent in AI service call
 
-      }
-      else if (req.body.model ==='grok-2.0') {
-        aiResult = await AskGrok(inputText,temp); // Use the run function from the provided code
-      }
+    // Step 3: Process AI response
+    const execuationObj = await processAiResponse(aiResult, req.body.model, res);
+    if (!execuationObj) return; // Response already sent in processing
 
-      //console.log('aiResult',aiResult);
-      const resString = cleanJsonString(aiResult);
-      //console.log(resString);
-      const resParsed = JSON.parse(resString);
-      //console.log('Parsed JSON response:', resParsed,'fullPromptObject',fullPromptObject);
+    // Step 4: Execute database insertion
+    const resultexecute = await executeDbInsertion(execuationObj, fullPromptObject, temp, runID, res);
+    if (resultexecute === null) return; // Response already sent in DB execution
 
+    // Success response
+    res.status(200).json({ 
+      success: true,
+      resultexecute 
+    });
 
-      const execuationObj = transformData(resParsed,req.body.model);
-      
-      
-      // pass the batchName 
-      let resultexecute = null;
-      if (execuationObj.length > 0) {
-        //console.log('before executeSpInsertToExecution',execuationObj,fullPromptObject.batchName,temp,promptID);
-        resultexecute = await executeSpInsertToExecution(execuationObj,fullPromptObject.batchName,temp,fullPromptObject.userName,promptID,runID); // Use the provided function to insert the question object
-        //console.log('resultexecute',resultexecute);
-      }
-      res.json({ resultexecute });
-  
-    } catch (error) {
-      console.error('Error processing string:', error);
-      res.status(500).send({errorName:'Internal Server Error',err:error});
-    }
- 
-
- 
-  
-  
-
- 
+  } catch (error) {
+    console.error("Unexpected error in /AskAi:", error);
+    res.status(500).json({ 
+      success: false,
+      errorName: "Unexpected Server Error", 
+      message: "An unexpected error occurred while processing your request",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
 });
 
-app.post('/SavePrompt', async (req, res) => {
-  
-    try {
-      const promptObject = req.body; // Assuming the question object is sent in the body
-      if (!promptObject) {
-        return res.status(400).send('No prompt object provided');
-      }
-      const result = await InsertPromptToDB(promptObject); 
-      res.json({ result });
-  
-    } catch (error) {
-      console.error('Error inserting Prompt:', error);
-      res.status(500).send('Internal Server Error Prompt');
-    }
-});
+// Helper function: Validate input data
+async function validateInputData(req, res) {
+  try {
+    const inputText = req.body.text;
+    const runID = req.body.RunId;
+    const fullPromptObject = req.body.prompt;
+    const temp = parseFloat(req.body.temp);
 
+    // Check for missing required fields
+    if (!inputText) {
+      res.status(400).json({
+        success: false,
+        errorName: "Missing Input Text",
+        message: "No text provided in the request"
+      });
+      return { inputText: null };
+    }
+
+    if (!runID) {
+      res.status(400).json({
+        success: false,
+        errorName: "Missing Run ID",
+        message: "No Run ID provided in the request"
+      });
+      return { inputText: null };
+    }
+
+    if (!fullPromptObject || !fullPromptObject.promptID) {
+      res.status(400).json({
+        success: false,
+        errorName: "Missing Prompt Object",
+        message: "No valid prompt object or prompt ID provided"
+      });
+      return { inputText: null };
+    }
+
+    if (isNaN(temp)) {
+      res.status(400).json({
+        success: false,
+        errorName: "Invalid Temperature",
+        message: "Temperature must be a valid number"
+      });
+      return { inputText: null };
+    }
+
+    return { inputText, runID, fullPromptObject, temp };
+
+  } catch (error) {
+    console.error("Error validating input data:", error);
+    res.status(400).json({
+      success: false,
+      errorName: "Input Validation Error",
+      message: "Failed to validate input data",
+      error: error.message
+    });
+    return { inputText: null };
+  }
+}
+
+// Helper function: Call AI service
+async function callAiService(inputText, model, temp, res) {
+  try {
+    const aiResult = await AiSwitcher(inputText, model, temp);
+    
+    if (!aiResult) {
+      res.status(502).json({
+        success: false,
+        errorName: "AI Service Error",
+        message: "AI service returned empty response"
+      });
+      return null;
+    }
+
+    console.log(`AI Result from ${model}:`, aiResult, typeof(aiResult));
+    return aiResult;
+
+  } catch (error) {
+    console.error("Error calling AI service:", error);
+    
+    // Check for specific AI service errors
+    if (error.message.includes('rate limit') || error.message.includes('quota')) {
+      res.status(429).json({
+        success: false,
+        errorName: "AI Service Rate Limit",
+        message: "AI service rate limit exceeded. Please try again later."
+      });
+    } else if (error.message.includes('authentication') || error.message.includes('unauthorized')) {
+      res.status(401).json({
+        success: false,
+        errorName: "AI Service Authentication Error",
+        message: "AI service authentication failed"
+      });
+    } else if (error.message.includes('timeout')) {
+      res.status(504).json({
+        success: false,
+        errorName: "AI Service Timeout",
+        message: "AI service request timed out"
+      });
+    } else {
+      res.status(502).json({
+        success: false,
+        errorName: "AI Service Error",
+        message: "Failed to get response from AI service",
+        error: error.message
+      });
+    }
+    return null;
+  }
+}
+
+// Helper function: Process AI response
+async function processAiResponse(aiResult, model, res) {
+  try {
+    const resString = cleanJsonString(aiResult);
+    
+    if (!resString) {
+      res.status(422).json({
+        success: false,
+        errorName: "AI Response Processing Error",
+        message: "Failed to clean AI response string"
+      });
+      return null;
+    }
+
+    const resParsed = JSON.parse(resString);
+    
+    if (!resParsed) {
+      res.status(422).json({
+        success: false,
+        errorName: "JSON Parsing Error",
+        message: "Failed to parse AI response as JSON"
+      });
+      return null;
+    }
+
+    const execuationObj = transformData(resParsed, model);
+    
+    if (!execuationObj || execuationObj.length === 0) {
+      res.status(422).json({
+        success: false,
+        errorName: "Data Transformation Error",
+        message: "Failed to transform AI response data or no valid data to process"
+      });
+      return null;
+    }
+
+    return execuationObj;
+
+  } catch (error) {
+    console.error("Error processing AI response:", error);
+    
+    if (error instanceof SyntaxError) {
+      res.status(422).json({
+        success: false,
+        errorName: "JSON Parsing Error",
+        message: "AI response is not valid JSON format",
+        error: error.message
+      });
+    } else {
+      res.status(422).json({
+        success: false,
+        errorName: "Response Processing Error",
+        message: "Failed to process AI response",
+        error: error.message
+      });
+    }
+    return null;
+  }
+}
+
+// Helper function: Execute database insertion
+async function executeDbInsertion(execuationObj, fullPromptObject, temp, runID, res) {
+  try {
+    const resultexecute = await executeSpInsertToExecution(
+      execuationObj,
+      fullPromptObject.batchName,
+      temp,
+      fullPromptObject.userName,
+      fullPromptObject.promptID,
+      runID
+    );
+
+    if (!resultexecute) {
+      res.status(500).json({
+        success: false,
+        errorName: "Database Insertion Error",
+        message: "Failed to insert execution data into database"
+      });
+      return null;
+    }
+
+    return resultexecute;
+
+  } catch (error) {
+    console.error("Error executing database insertion:", error);
+    
+    // Check for specific database errors
+    if (error.message.includes('connection') || error.message.includes('timeout')) {
+      res.status(503).json({
+        success: false,
+        errorName: "Database Connection Error",
+        message: "Database connection failed or timed out"
+      });
+    } else if (error.message.includes('constraint') || error.message.includes('duplicate')) {
+      res.status(409).json({
+        success: false,
+        errorName: "Database Constraint Error",
+        message: "Data violates database constraints or already exists"
+      });
+    } else if (error.message.includes('permission') || error.message.includes('access')) {
+      res.status(403).json({
+        success: false,
+        errorName: "Database Permission Error",
+        message: "Insufficient permissions to perform database operation"
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        errorName: "Database Error",
+        message: "Failed to execute database operation",
+        error: error.message
+      });
+    }
+    return null;
+  }
+}
+
+app.post("/SavePrompt", async (req, res) => {
+  try {
+    const promptObject = req.body; // Assuming the question object is sent in the body
+    if (!promptObject) {
+      return res.status(400).send("No prompt object provided");
+    }
+    const result = await InsertPromptToDB(promptObject);
+    res.json({ result });
+  } catch (error) {
+    console.error("Error inserting Prompt:", error);
+    res.status(500).send("Internal Server Error Prompt");
+  }
+});
 
 // POST route to receive a question object and insert it into the database
-app.post('/insertExecuation', async (req, res) => {
+app.post("/insertExecuation", async (req, res) => {
   try {
     const questionObject = req.body; // Assuming the question object is sent in the body
     if (!questionObject) {
-      return res.status(400).send('No question object provided');
+      return res.status(400).send("No question object provided");
     }
     const result = await executeSpInsertToExecution(questionObject); // Use the provided function to insert the question object
     res.json({ result });
-
   } catch (error) {
-    console.error('Error inserting question:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error inserting question:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-app.post('/insertQuestions', async (req, res) => {
+app.post("/insertQuestions", async (req, res) => {
   try {
     const questionObjects = req.body; // Assuming the question object is sent in the body
     if (!questionObjects) {
-      return res.status(400).send('No question object provided');
+      return res.status(400).send("No question object provided");
     }
     const result = await InsertToQuestion(questionObjects); // Use the provided function to insert the question object
     res.json({ result });
-
   } catch (error) {
-    console.error('Error inserting question:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error inserting question:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-app.post('/insertAnswers', async (req, res) => {
+app.post("/insertAnswers", async (req, res) => {
   try {
     // Decompress the data using pako
-     const decompressed = Pako.ungzip(req.body, { to: 'string' });
+    const decompressed = Pako.ungzip(req.body, { to: "string" });
 
-     // Parse the decompressed JSON
-     const answersObjects = JSON.parse(decompressed);
+    // Parse the decompressed JSON
+    const answersObjects = JSON.parse(decompressed);
 
     if (!answersObjects) {
-      return res.status(400).send('No answers object provided');
+      return res.status(400).send("No answers object provided");
     }
-    console.log('answersObjects',answersObjects)
+    console.log("answersObjects", answersObjects);
     const result = await InsertToAnswer(answersObjects); // Use the provided function to insert the question object
     res.json({ result });
-
   } catch (error) {
-    console.error('Error inserting question:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error inserting question:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-app.post('/Login', async (req, res) => {
+app.post("/Login", async (req, res) => {
   try {
-    const user = req.body; 
+    const user = req.body;
     if (!user) {
-      return res.status(400).send('No user object provided');
+      return res.status(400).send("No user object provided");
     }
 
-    if ((user.username == process.env.USER2 || user.username==process.env.USER1)&& user.password == process.env.APP_PASSWORD) {
-      res.json({ result: 'success',user:user });
+    if (
+      (user.username == process.env.USER2 ||
+        user.username == process.env.USER1) &&
+      user.password == process.env.APP_PASSWORD
+    ) {
+      res.json({ result: "success", user: user });
+    } else {
+      res.json({ result: "failed", user: user });
     }
-    else {
-      res.json({ result: 'failed',user:user });
-    }
-   
-
-  } 
-  catch (error) {
-    console.error('Failed to login to server: ', error);
-    res.status(500).send('Internal Server Error');
+  } catch (error) {
+    console.error("Failed to login to server: ", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-
-app.get('/getAllPrompt', async (req, res) => {
+app.get("/getAllPrompt", async (req, res) => {
   try {
     const promptsList = await getAllPrompts(); // Use the provided function to get all prompts
     res.json({ promptsList });
-  } 
-  catch (error) {
-    console.error('Error retrieving prompts:', error);
-    res.status(500).send('Internal Server Error getAllPrompt');
+  } catch (error) {
+    console.error("Error retrieving prompts:", error);
+    res.status(500).send("Internal Server Error getAllPrompt");
   }
 });
 
-
 // GET route to retrieve all execution scores from the database
-app.get('/getAllExecutionScores', async (req, res) => {
+app.get("/getAllExecutionScores", async (req, res) => {
   try {
     const scores = await getAllExecutionScores(); // Use the provided function to get all execution scores
     res.json({ scores });
-
   } catch (error) {
-    console.error('Error retrieving scores:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error retrieving scores:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-
 //GET ALL HISTORY from the database
-app.get('/getHistory', async (req, res) => {
+app.get("/getHistory", async (req, res) => {
   try {
     const history = await getExecutionScoresWithRunIDs(); // Use the provided function to get all execution scores
     res.json({ history });
-
   } catch (error) {
-    console.error('Error retrieving History:', error);
-    res.status(500).send('Internal Server Error',error);
+    console.error("Error retrieving History:", error);
+    res.status(500).send("Internal Server Error", error);
   }
 });
 
 //GET ALL MODEL SCORES from the database
 /////////////// this 2 methods is post because more easy pass the params in the body
-app.post('/getModelScores', async (req, res) => {
+app.post("/getModelScores", async (req, res) => {
   try {
     //console.log('req.query',req.body);
     const domain = req.body.domain;
     const models = await getModelScores(domain); // Use the provided function to get stats about consistency of model
     res.json({ models });
-
-  } 
-  catch (error) {
-    console.error('Error retrieving models stats: getModelScores', error);
-    res.status(500).send('Internal Server Error : Error retrieving models stats: getModelScores',error);
+  } catch (error) {
+    console.error("Error retrieving models stats: getModelScores", error);
+    res
+      .status(500)
+      .send(
+        "Internal Server Error : Error retrieving models stats: getModelScores",
+        error
+      );
   }
 });
 
-app.post('/getConsistencyModels', async (req, res) => {
+app.post("/getConsistencyModels", async (req, res) => {
   const domain = req.body.domain;
   try {
     const models = await getconsistencyModels(domain); // Use the provided function to get stats about consistency of model
     res.json({ models });
-
-  } 
-  catch (error) {
-    console.error('Error retrieving models stats: getconsistencyModels', error);
-    res.status(500).send('Internal Server Error',error);
+  } catch (error) {
+    console.error("Error retrieving models stats: getconsistencyModels", error);
+    res.status(500).send("Internal Server Error", error);
   }
 });
 
-app.post('/getCoherencyBetweenModels', async (req, res) => {
+app.post("/getCoherencyBetweenModels", async (req, res) => {
   const domain = req.body.domain;
   try {
     const models = await getcoherencyBetweenModels(domain); // Use the provided function to get stats about consistency of model
     res.json({ models });
-
-  } 
-  catch (error) {
-    console.error('Error retrieving models stats: getcoherencyBetweenModels', error);
-    res.status(500).send('Internal Server Error',error);
+  } catch (error) {
+    console.error(
+      "Error retrieving models stats: getcoherencyBetweenModels",
+      error
+    );
+    res.status(500).send("Internal Server Error", error);
   }
 });
 /////////////////
-app.get('/getDetailsConsistencyModels', async (req, res) => {
+app.get("/getDetailsConsistencyModels", async (req, res) => {
   try {
     const models = await getdetailedConsistencyModel(); // Use the provided function to get stats about consistency of model
     res.json({ models });
-
-  } 
-  catch (error) {
-    console.error('Error retrieving models stats: getdetailedConsistencyModel', error);
-    res.status(500).send('Internal Server Error',error);
+  } catch (error) {
+    console.error(
+      "Error retrieving models stats: getdetailedConsistencyModel",
+      error
+    );
+    res.status(500).send("Internal Server Error", error);
   }
 });
 
 // GET route to retrieve all questions from the database
-app.get('/getAllQuestions', async (req, res) => {
+app.get("/getAllQuestions", async (req, res) => {
   try {
     const questions = await getAllQuestions(); // Use the provided function to get all questions
     //console.log('in the controller ',questions)
     res.json({ questions });
-
   } catch (error) {
-    console.error('Error retrieving questions:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error retrieving questions:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
 //GET detail about RankCompare for each Answer of quest in runid
-app.post('/getDetailEachAnswerOfQuestRankCompare', async (req, res) => {
+app.post("/getDetailEachAnswerOfQuestRankCompare", async (req, res) => {
   try {
     const runID = req.body.runID;
     const questionID = req.body.questionID;
-    const answers = await getDetailEachAnswerOfQuestRankCompare(questionID,runID); // Use the provided function to get all questions
+    const answers = await getDetailEachAnswerOfQuestRankCompare(
+      questionID,
+      runID
+    ); // Use the provided function to get all questions
     res.json({ answers });
-
   } catch (error) {
-    console.error('Error retrieving questions:', error);
-    res.status(500).send('Internal Server Error');
+    console.error("Error retrieving questions:", error);
+    res.status(500).send("Internal Server Error");
   }
 });
 
-
 // Optionally, explicitly serve index.html for the root route
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', '../pages/Login.html'));
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "../pages/Login.html"));
 });
 
 // Start the server
 app.listen(port, () => {
-  console.log('__dirname',__dirname)
+  console.log("__dirname", __dirname);
   console.log(`Server running at http://localhost:${port}`);
 });

@@ -63,7 +63,7 @@
     });
   
     const result = await chatSession.sendMessage(inputText);
-    console.log(result.response.text());
+    //console.log(result.response.text());
     return result.response.text();
     //console.log(result.response.text());
   }

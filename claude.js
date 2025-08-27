@@ -4,24 +4,29 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-async function chatWithContext() {
+export async function askClaude(
+  inputText,
+  modelName = "claude-sonnet-4-20250514",
+  temp = 0
+) {
   try {
     const message = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: modelName,
       max_tokens: 1500,
-      system: "אתה עוזר מועיל שעונה בעברית ומתמחה בפיתוח תוכנה.",
+      temperature: temp,
+      system:
+        "You are an AI that helps us in research about answer ratings for questions from the stack exchange site your task is to rate the answers to questions and your output is JSON only",
       messages: [
         {
           role: "user",
-          content: "תוכל להסביר מה זה Promise ב-JavaScript?",
+          content: inputText,
         },
       ],
     });
 
-    console.log(message.content[0].text);
+    //console.log(message.content[0].text);
+    return message.content[0].text;
   } catch (error) {
     console.error(error);
   }
 }
-
-chatWithContext();

@@ -1,54 +1,90 @@
-import Question from './BL/Question.js';
+import Question from "./BL/Question.js";
+import { AskGemini } from "./gemini.js";
+import { AskOpenAI } from "./openai.js";
+import { AskGrok } from "./grok.js";
+import { askClaude } from "./claude.js";
+import { askDeepSeek } from "./deepseek.js";
 
 // Function to clean the string
 export function cleanJsonString(str) {
-    // Remove any potential hidden characters at the start of the string
-    str = str.replace(/^\uFEFF/, '');
-    // Remove any potential formatting characters
-    str = str.replace(/^```json\s*/, '').replace(/```$/, '');
-    str = str.replace("```", "");
-    // Trim whitespace
-    return str.trim();
+  // Remove any potential hidden characters at the start of the string
+  str = str.replace(/^\uFEFF/, "");
+  // Remove any potential formatting characters
+  str = str.replace(/^```json\s*/, "").replace(/```$/, "");
+  str = str.replace("```", "");
+  // Trim whitespace
+  return str.trim();
 }
-
 
 export function transformData(data, modelName) {
-    return data.map(res => ({
-        QuestionID: res.question_id,
-        AnswerID: res.answer_id,
-        AnswerIndex: res.answer_index,
-        HumanRank: null, // need to get it in the SQL
-        AiRank: res.rating,
-        AiExplnation: res.reason,
-        modelName: modelName,
-        temp: res.temperature
-    
-    }));
+  return data.map((res) => ({
+    QuestionID: res.question_id,
+    AnswerID: res.answer_id,
+    AnswerIndex: res.answer_index,
+    HumanRank: null, // need to get it in the SQL
+    AiRank: res.rating,
+    AiExplnation: res.reason,
+    modelName: modelName,
+    temp: res.temperature,
+  }));
 }
 
-
 export function transformModelData(inputArray) {
+  console.log("Transforming model data:", inputArray);
   const map = new Map();
 
-  inputArray.forEach(item => {
-      const key = `${item.Model1}vs${item.Model2}`;
-      if (!map.has(key)) {
-          map.set(key, []);
-      }
-      map.get(key).push({ AlignmentLevel: item.AlignmentLevel, Percentage: item.Percentage });
+  inputArray.forEach((item) => {
+    const key = `${item.Model1}vs${item.Model2}`;
+    if (!map.has(key)) {
+      map.set(key, { alignments: [], totalCount: 0 });
+    }
+
+    const entry = map.get(key);
+    entry.alignments.push({
+      AlignmentLevel: item.AlignmentLevel,
+      Percentage: item.Percentage,
+      Count: item.Count,
+    });
+    entry.totalCount += item.Count; // Sum the counts
   });
 
   const resultArray = Array.from(map.entries()).map(([key, value]) => {
-      const [Model1, Model2] = key.split('vs');
-      return { Model1, Model2, Alignments: value };
+    const [Model1, Model2] = key.split("vs");
+    return {
+      Model1,
+      Model2,
+      Alignments: value.alignments,
+      TotalCount: value.totalCount, // Total count for this model pair
+    };
   });
 
   return resultArray;
 }
-
-
-
 export function transformQuestionsAndAnswers(data) {
-    const questionsMap = Question.createQuestionsMap(data);
-    return Array.from(questionsMap.values());
+  const questionsMap = Question.createQuestionsMap(data);
+  return Array.from(questionsMap.values());
 }
+
+export const AiSwitcher = (inputText, modelName, temp) => {
+  switch (modelName) {
+    case "gpt-5":
+    case "gpt-4o":
+    case "gpt-3.5-turbo":
+    case "o1":
+      return AskOpenAI(inputText, temp, modelName);
+    case "claude-sonnet-4-20250514":
+    case "claude-3-5-sonnet-20241022":
+      return askClaude(inputText, modelName, temp);
+    case "grok-4-0709":
+    case "grok-3":
+      return AskGrok(inputText, temp, modelName);
+    case "deepseek-chat":
+    case "deepseek-coder":
+      return askDeepSeek(inputText, modelName, temp);
+    case "gemini-2.5-flash":
+    case "gemini-1.5-flash":
+      return AskGemini(inputText, temp, modelName);
+    default:
+      throw new Error(`Unsupported model: ${modelName}`);
+  }
+};

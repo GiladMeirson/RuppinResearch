@@ -9,9 +9,9 @@ const client = new OpenAI({
     baseURL: "https://api.x.ai/v1",
 });
 
-export const AskGrok = async (inputText,temp=0)=>{
+export const AskGrok = async (inputText,temp=0,modelName="grok-3")=>{
     const completion = await client.chat.completions.create({
-        model: "grok-2-latest",
+        model: modelName,
         temperature: temp,
         messages: [
             {
@@ -26,7 +26,7 @@ export const AskGrok = async (inputText,temp=0)=>{
         ],
     });
     
-    console.log(completion.choices[0].message.content);
+    //console.log(completion.choices[0].message.content);
     return completion.choices[0].message.content
 }
 

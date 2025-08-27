@@ -1,248 +1,321 @@
-import sql from 'mssql';
-import dotenv from 'dotenv';
-import Execution from './BL/Execution.js';
-import {transformQuestionsAndAnswers,transformModelData} from './utils.js';
+import sql from "mssql";
+import dotenv from "dotenv";
+import Execution from "./BL/Execution.js";
+import { transformQuestionsAndAnswers, transformModelData } from "./utils.js";
 
 dotenv.config();
 
 // Configuration object
 const config = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    server: process.env.DB_SERVER,
-    database: process.env.DB_DATABASE,
-    options: {
-        encrypt: true,
-        trustServerCertificate: true
-    }
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  server: process.env.DB_SERVER,
+  database: process.env.DB_DATABASE,
+  options: {
+    encrypt: true,
+    trustServerCertificate: true,
+  },
 };
-
-
-
-
-
-
-
-
-
-
-
 
 // Connect to the database
 async function connectToDatabase() {
-    try {
-        let pool = await sql.connect(config);
-        console.log('Connected to the database');
+  try {
+    let pool = await sql.connect(config);
+    console.log("Connected to the database");
 
-        // Example query
-        let result = await pool.request().query('select * from stam');
-        console.log(result);
+    // Example query
+    let result = await pool.request().query("select * from stam");
+    console.log(result);
 
-        // Close the connection
-        sql.close();
-    } catch (err) {
-        console.error('Database connection failed:', err);
-    }
+    // Close the connection
+    sql.close();
+  } catch (err) {
+    console.error("Database connection failed:", err);
+  }
 }
-async function executeSpInsertToExecution(questionObjects,batchName,temp,userName,promptID,runID) {
-    let pool;
-    let transaction;
-    try {
-        pool = await sql.connect(config);
-        console.log('Connected to the database');
+async function executeSpInsertToExecution(
+  questionObjects,
+  batchName,
+  temp,
+  userName,
+  promptID,
+  runID
+) {
+  let pool;
+  let transaction;
+  try {
+    pool = await sql.connect(config);
+    console.log("Connected to the database");
 
-        // Start a transaction
-        transaction = new sql.Transaction(pool);
-        await transaction.begin();
+    // Start a transaction
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-        const request = new sql.Request(transaction);
-        let result = null;
-        // Process each object in the array
-        for (const questionObject of questionObjects) {
-            result = await request
-                .input('batchName', sql.VarChar(55), batchName)
-                .input('QuestionID', sql.Int, questionObject.QuestionID)
-                .input('AnswerID', sql.Int, questionObject.AnswerID)
-                .input('AnswerIndex', sql.TinyInt, questionObject.AnswerIndex)
-                .input('HumanRank', sql.Int, questionObject.HumanRank)
-                .input('AiRank', sql.Int, questionObject.AiRank)
-                .input('AiExplnation', sql.NVarChar(sql.MAX), questionObject.AiExplnation)
-                .input('ModelName', sql.NVarChar(55), questionObject.modelName)
-                .input('temp', sql.Float, temp)
-                .input('userName', sql.NVarChar(55), userName)
-                .input('promptID', sql.Int, promptID)
-                .input('RunId', sql.NVarChar(55), runID)
-                .execute('sp_insertToExecution');
-            // Clear the inputs for the next iteration
-            request.parameters = {};
+    const request = new sql.Request(transaction);
+    let result = null;
+    // Process each object in the array
+    for (const questionObject of questionObjects) {
+      result = await request
+        .input("batchName", sql.VarChar(55), batchName)
+        .input("QuestionID", sql.Int, questionObject.QuestionID)
+        .input("AnswerID", sql.Int, questionObject.AnswerID)
+        .input("AnswerIndex", sql.TinyInt, questionObject.AnswerIndex)
+        .input("HumanRank", sql.Int, questionObject.HumanRank)
+        .input("AiRank", sql.Int, questionObject.AiRank)
+        .input(
+          "AiExplnation",
+          sql.NVarChar(sql.MAX),
+          questionObject.AiExplnation
+        )
+        .input("ModelName", sql.NVarChar(55), questionObject.modelName)
+        .input("temp", sql.Float, temp)
+        .input("userName", sql.NVarChar(55), userName)
+        .input("promptID", sql.Int, promptID)
+        .input("RunId", sql.NVarChar(55), runID)
+        .execute("sp_insertToExecution");
+      // Clear the inputs for the next iteration
+      request.parameters = {};
 
-            console.log(`Stored procedure executed for QuestionID: ${questionObject.QuestionID}`);
-            
-            // Clear the inputs for the next iteration
-            
-            
-        }
+      console.log(
+        `Stored procedure executed for QuestionID: ${questionObject.QuestionID}`
+      );
 
-        // Commit the transaction
-        await transaction.commit();
-        console.log('All inserts committed successfully');
-
-        // Close the connection
-        await sql.close();
-        
-        return { success: true, message: 'All records inserted successfully',data:result.recordset };
-    } catch (err) {
-        console.error('Database operation failed:', err);
-        
-        // If there's an error, roll back the transaction
-        if (transaction) {
-            await transaction.rollback();
-            console.log('Transaction rolled back due to error');
-        }
-        
-        // Make sure to close the connection even if there's an error
-        if (pool) {
-            await sql.close();
-        }
-        
-        throw err;  // Re-throw the error for the caller to handle
+      // Clear the inputs for the next iteration
     }
+
+    // Commit the transaction
+    await transaction.commit();
+    console.log("All inserts committed successfully");
+
+    // Close the connection
+    await sql.close();
+
+    return {
+      success: true,
+      message: "All records inserted successfully",
+      data: result.recordset,
+    };
+  } catch (err) {
+    console.error("Database operation failed:", err);
+
+    // If there's an error, roll back the transaction
+    if (transaction) {
+      await transaction.rollback();
+      console.log("Transaction rolled back due to error");
+    }
+
+    // Make sure to close the connection even if there's an error
+    if (pool) {
+      await sql.close();
+    }
+
+    throw err; // Re-throw the error for the caller to handle
+  }
 }
 
 export async function InsertToQuestion(questionsArray) {
-    let pool;
-    let transaction;
-    try {
-        pool = await sql.connect(config);
-        console.log('Connected to the database');
+  let pool;
+  let transaction;
+  try {
+    pool = await sql.connect(config);
+    console.log("Connected to the database");
 
-        // Start a transaction
-        transaction = new sql.Transaction(pool);
-        await transaction.begin();
+    // Start a transaction
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-        const request = new sql.Request(transaction);
+    const request = new sql.Request(transaction);
 
-        // Process each object in the array
-        for (const question of questionsArray) {
-            await request
-                .input('Id', sql.Int, question.Id)
-                .input('AcceptedAnswerId', sql.Int, question.AcceptedAnswerId ? question.AcceptedAnswerId : null)
-                .input('CreationDate', sql.BigInt, question.CreationDate)
-                .input('DeletionDate', sql.BigInt, question.DeletionDate? question.DeletionDate : null)
-                .input('Score', sql.Int, question.Score)
-                .input('ViewCount', sql.Int, question.ViewCount)
-                .input('Body', sql.NVarChar(sql.MAX), question.Body)
-                .input('OwnerUserId', sql.Int, question.OwnerUserId)
-                .input('OwnerDisplayName', sql.NVarChar(255), question.OwnerDisplayName ? question.OwnerDisplayName : null)
-                .input('LastEditorUserId', sql.Int, question.LastEditorUserId ? question.LastEditorUserId : null)
-                .input('LastEditorDisplayName', sql.NVarChar(255), question.LastEditorDisplayName ? question.LastEditorDisplayName : null)
-                .input('LastEditDate', sql.BigInt, question.LastEditDate ? question.LastEditDate : null)
-                .input('LastActivityDate', sql.BigInt, question.LastActivityDate ? question.LastActivityDate : null)
-                .input('Title', sql.NVarChar(255), question.Title)
-                .input('Tags', sql.NVarChar(255), question.Tags)
-                .input('AnswerCount', sql.Int, question.AnswerCount)
-                .input('CommentCount', sql.Int, question.CommentCount)
-                .input('FavoriteCount', sql.Int, question.FavoriteCount ? question.FavoriteCount : null)
-                .input('ClosedDate', sql.BigInt, question.ClosedDate ? question.ClosedDate : null)
-                .input('CommunityOwnedDate', sql.BigInt, question.CommunityOwnedDate ? question.CommunityOwnedDate : null)
-                .input('ContentLicense', sql.NVarChar(255), question.ContentLicense)
-                .input('BatchName', sql.VarChar(55), question.batchID)
-                .execute('spInsertQuestion');
+    // Process each object in the array
+    for (const question of questionsArray) {
+      await request
+        .input("Id", sql.Int, question.Id)
+        .input(
+          "AcceptedAnswerId",
+          sql.Int,
+          question.AcceptedAnswerId ? question.AcceptedAnswerId : null
+        )
+        .input("CreationDate", sql.BigInt, question.CreationDate)
+        .input(
+          "DeletionDate",
+          sql.BigInt,
+          question.DeletionDate ? question.DeletionDate : null
+        )
+        .input("Score", sql.Int, question.Score)
+        .input("ViewCount", sql.Int, question.ViewCount)
+        .input("Body", sql.NVarChar(sql.MAX), question.Body)
+        .input("OwnerUserId", sql.Int, question.OwnerUserId)
+        .input(
+          "OwnerDisplayName",
+          sql.NVarChar(255),
+          question.OwnerDisplayName ? question.OwnerDisplayName : null
+        )
+        .input(
+          "LastEditorUserId",
+          sql.Int,
+          question.LastEditorUserId ? question.LastEditorUserId : null
+        )
+        .input(
+          "LastEditorDisplayName",
+          sql.NVarChar(255),
+          question.LastEditorDisplayName ? question.LastEditorDisplayName : null
+        )
+        .input(
+          "LastEditDate",
+          sql.BigInt,
+          question.LastEditDate ? question.LastEditDate : null
+        )
+        .input(
+          "LastActivityDate",
+          sql.BigInt,
+          question.LastActivityDate ? question.LastActivityDate : null
+        )
+        .input("Title", sql.NVarChar(255), question.Title)
+        .input("Tags", sql.NVarChar(255), question.Tags)
+        .input("AnswerCount", sql.Int, question.AnswerCount)
+        .input("CommentCount", sql.Int, question.CommentCount)
+        .input(
+          "FavoriteCount",
+          sql.Int,
+          question.FavoriteCount ? question.FavoriteCount : null
+        )
+        .input(
+          "ClosedDate",
+          sql.BigInt,
+          question.ClosedDate ? question.ClosedDate : null
+        )
+        .input(
+          "CommunityOwnedDate",
+          sql.BigInt,
+          question.CommunityOwnedDate ? question.CommunityOwnedDate : null
+        )
+        .input("ContentLicense", sql.NVarChar(255), question.ContentLicense)
+        .input("BatchName", sql.VarChar(55), question.batchID)
+        .execute("spInsertQuestion");
 
-            // Clear the inputs for the next iteration
-            request.parameters = {};
-        }
-
-        // Commit the transaction
-        await transaction.commit();
-        console.log('All inserts committed successfully - Questions !');
-
-        // Close the connection
-        await sql.close();
-        
-        return { success: true, message: 'All records inserted successfully' };
-    } catch (err) {
-        console.error('Database spInsertQuestion operation failed:', err);
-        
-        // If there's an error, roll back the transaction
-        if (transaction) {
-            await transaction.rollback();
-            console.log('Transaction rolled back due to error');
-        }
-        
-        // Make sure to close the connection even if there's an error
-        if (pool) {
-            await sql.close();
-        }
-        
-        throw err;  // Re-throw the error for the caller to handle
+      // Clear the inputs for the next iteration
+      request.parameters = {};
     }
+
+    // Commit the transaction
+    await transaction.commit();
+    console.log("All inserts committed successfully - Questions !");
+
+    // Close the connection
+    await sql.close();
+
+    return { success: true, message: "All records inserted successfully" };
+  } catch (err) {
+    console.error("Database spInsertQuestion operation failed:", err);
+
+    // If there's an error, roll back the transaction
+    if (transaction) {
+      await transaction.rollback();
+      console.log("Transaction rolled back due to error");
+    }
+
+    // Make sure to close the connection even if there's an error
+    if (pool) {
+      await sql.close();
+    }
+
+    throw err; // Re-throw the error for the caller to handle
+  }
 }
 
 export async function InsertToAnswer(answersArray) {
-    let pool;
-    let transaction;
-    try {
-        pool = await sql.connect(config);
-        console.log('Connected to the database');
+  let pool;
+  let transaction;
+  try {
+    pool = await sql.connect(config);
+    console.log("Connected to the database");
 
-        // Start a transaction
-        transaction = new sql.Transaction(pool);
-        await transaction.begin();
+    // Start a transaction
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-        const request = new sql.Request(transaction);
+    const request = new sql.Request(transaction);
 
-        // Process each object in the array
-        for (const answer of answersArray) {
-            await request
-                .input('Id', sql.Int, answer.Id)
-                .input('ParentId', sql.Int, answer.ParentId)
-                .input('CreationDate', sql.BigInt, answer.CreationDate)
-                .input('DeletionDate', sql.BigInt, answer.DeletionDate ? answer.DeletionDate : null)
-                .input('Score', sql.Int, answer.Score)
-                .input('Body', sql.NVarChar(sql.MAX), answer.Body)
-                .input('OwnerUserId', sql.Int, answer.OwnerUserId)
-                .input('OwnerDisplayName', sql.NVarChar(40), answer.OwnerDisplayName ? answer.OwnerDisplayName : null)
-                .input('LastEditorUserId', sql.Int, answer.LastEditorUserId ? answer.LastEditorUserId : null)
-                .input('LastEditorDisplayName', sql.NVarChar(40), answer.LastEditorDisplayName ? answer.LastEditorDisplayName : null)
-                .input('LastEditDate', sql.BigInt, answer.LastEditDate ? answer.LastEditDate : null)
-                .input('LastActivityDate', sql.BigInt, answer.LastActivityDate ? answer.LastActivityDate : null)
-                .input('CommunityOwnedDate', sql.BigInt, answer.CommunityOwnedDate ? answer.CommunityOwnedDate : null)
-                .input('ContentLicense', sql.NVarChar(30), answer.ContentLicense)
-                .input('BatchName', sql.VarChar(55), answer.BatchName)
-                .input('NormalizedScore', sql.Int, answer.NormalizedScore)
-                .input('Label',sql.VarChar(32),answer.Label)
-                .input('LabelRank',sql.Int,answer.LabelRank)
-                .input('AnswerOrder',sql.Int,answer.AnswerOrder)
-                .input('ViewCount', sql.Int, answer.ViewCount ? answer.ViewCount : null)
-                .input('ClosedDate', sql.BigInt, answer.ClosedDate ? answer.ClosedDate : null)
-                .execute('spInsertAnswers');
+    // Process each object in the array
+    for (const answer of answersArray) {
+      await request
+        .input("Id", sql.Int, answer.Id)
+        .input("ParentId", sql.Int, answer.ParentId)
+        .input("CreationDate", sql.BigInt, answer.CreationDate)
+        .input(
+          "DeletionDate",
+          sql.BigInt,
+          answer.DeletionDate ? answer.DeletionDate : null
+        )
+        .input("Score", sql.Int, answer.Score)
+        .input("Body", sql.NVarChar(sql.MAX), answer.Body)
+        .input("OwnerUserId", sql.Int, answer.OwnerUserId)
+        .input(
+          "OwnerDisplayName",
+          sql.NVarChar(40),
+          answer.OwnerDisplayName ? answer.OwnerDisplayName : null
+        )
+        .input(
+          "LastEditorUserId",
+          sql.Int,
+          answer.LastEditorUserId ? answer.LastEditorUserId : null
+        )
+        .input(
+          "LastEditorDisplayName",
+          sql.NVarChar(40),
+          answer.LastEditorDisplayName ? answer.LastEditorDisplayName : null
+        )
+        .input(
+          "LastEditDate",
+          sql.BigInt,
+          answer.LastEditDate ? answer.LastEditDate : null
+        )
+        .input(
+          "LastActivityDate",
+          sql.BigInt,
+          answer.LastActivityDate ? answer.LastActivityDate : null
+        )
+        .input(
+          "CommunityOwnedDate",
+          sql.BigInt,
+          answer.CommunityOwnedDate ? answer.CommunityOwnedDate : null
+        )
+        .input("ContentLicense", sql.NVarChar(30), answer.ContentLicense)
+        .input("BatchName", sql.VarChar(55), answer.BatchName)
+        .input("NormalizedScore", sql.Int, answer.NormalizedScore)
+        .input("Label", sql.VarChar(32), answer.Label)
+        .input("LabelRank", sql.Int, answer.LabelRank)
+        .input("AnswerOrder", sql.Int, answer.AnswerOrder)
+        .input("ViewCount", sql.Int, answer.ViewCount ? answer.ViewCount : null)
+        .input(
+          "ClosedDate",
+          sql.BigInt,
+          answer.ClosedDate ? answer.ClosedDate : null
+        )
+        .execute("spInsertAnswers");
 
-            // Clear the inputs for the next iteration
-            request.parameters = {};
-        }
-
-        // Commit the transaction
-        await transaction.commit();
-        console.log('All inserts committed successfully - Answers !');
-
-        // Close the connection
-        await sql.close();
-        
-        return { success: true, message: 'All records inserted successfully' };
-    } 
-    catch (err) {
-        console.error('Database spInsertAnswer operation failed:', err);
-        
-        // If there's an error, roll back the transaction
-        if (transaction) {
-            await transaction.rollback();
-            console.log('Transaction rolled back due to error');
-
-        }
+      // Clear the inputs for the next iteration
+      request.parameters = {};
     }
-}
 
+    // Commit the transaction
+    await transaction.commit();
+    console.log("All inserts committed successfully - Answers !");
+
+    // Close the connection
+    await sql.close();
+
+    return { success: true, message: "All records inserted successfully" };
+  } catch (err) {
+    console.error("Database spInsertAnswer operation failed:", err);
+
+    // If there's an error, roll back the transaction
+    if (transaction) {
+      await transaction.rollback();
+      console.log("Transaction rolled back due to error");
+    }
+  }
+}
 
 // ^^^^^^^^ Example usage ^^^^^^^^^:
 // const questionObject = {
@@ -261,308 +334,298 @@ export async function InsertToAnswer(answersArray) {
 //     .catch(err => console.error('Error:', err));
 
 export async function getAllExecutionScores() {
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request().execute('spGetAllExecutaionScores');
-        
-        const scores = result.recordset.map(row => ({
-            QuestionID: row.QuestionID,
-            RunGroup: row.RunGroup,
-            TotalPositionDifference: row.TotalPositionDifference,
-            ModelName: row.ModelName,
-        }));
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool.request().execute("spGetAllExecutaionScores");
 
-        //console.log('Execution scores:', scores)
+    const scores = result.recordset.map((row) => ({
+      QuestionID: row.QuestionID,
+      RunGroup: row.RunGroup,
+      TotalPositionDifference: row.TotalPositionDifference,
+      ModelName: row.ModelName,
+    }));
 
-        return scores;
-    } catch (err) {
-        console.error('Error in getAllExecutionScores DBservices --> ', err);
-        throw err;
-    } finally {
-        if (pool) {
-            await pool.close();
-        }
+    //console.log('Execution scores:', scores)
+
+    return scores;
+  } catch (err) {
+    console.error("Error in getAllExecutionScores DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
+  }
 }
 
 export async function getExecutionScoresWithRunIDs() {
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request().execute('sp_getAllExeScoresByRunIds');
-        return result.recordset.map(row => new Execution(row));
-    } 
-    catch (err) {
-        console.error('Error in getExecutionScoresWithRunIDs DBservices --> ', err);
-        throw err;
-    } 
-    finally {
-        if (pool) {
-            await pool.close();
-        }
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool.request().execute("sp_getAllExeScoresByRunIds");
+    return result.recordset.map((row) => new Execution(row));
+  } catch (err) {
+    console.error("Error in getExecutionScoresWithRunIDs DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
+  }
 }
 
 export async function getconsistencyModels(domain) {
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const request = pool.request();
-        request.input('domain', sql.VarChar, domain); // Add the parameter here
-        const result = await request.execute('spGetAvgconsistentPerModel');
-        const models = result.recordset.map(row => ({
-            ModelName: row.ModelName,
-            AveragePercentage: row.AveragePercentage,
-        }));
-        return models;
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const request = pool.request();
+    request.input("domain", sql.VarChar, domain); // Add the parameter here
+    const result = await request.execute("spGetAvgconsistentPerModel");
+    const models = result.recordset.map((row) => ({
+      ModelName: row.ModelName,
+      AveragePercentage: row.AveragePercentage,
+      SamplesCount: row.SamplesCount,
+    }));
+    return models;
+  } catch (err) {
+    console.error("Error in getconsistencyModels DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
-    catch (err) {
-        console.error('Error in getconsistencyModels DBservices --> ', err);
-        throw err;
-    }
-    finally {
-        if (pool) {
-            await pool.close();
-        }
-    }
+  }
 }
 
 export async function getdetailedConsistencyModel() {
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request().execute('sp_getConsistentofQuestAndModels');
-        const models = result.recordset.map(row => ({
-            QuestionID: row.QuestionID,
-            ModelName: row.ModelName,
-            RankingDifference: row.RankingDifference,
-            Count: row.Count,
-            ConsistencyPercentage: row.ConsistencyPercentage,
-        }));
-        return models;
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool
+      .request()
+      .execute("sp_getConsistentofQuestAndModels");
+    const models = result.recordset.map((row) => ({
+      QuestionID: row.QuestionID,
+      ModelName: row.ModelName,
+      RankingDifference: row.RankingDifference,
+      Count: row.Count,
+      ConsistencyPercentage: row.ConsistencyPercentage,
+    }));
+    return models;
+  } catch (err) {
+    console.error("Error in getdetailedConsistencyModel DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
-    catch (err) {
-        console.error('Error in getdetailedConsistencyModel DBservices --> ', err);
-        throw err;
-    }
-    finally {
-        if (pool) {
-            await pool.close();
-        }
-    }
+  }
 }
 
 export async function getModelScores(domain) {
-    //console.log('domain',domain);
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request()
-            .input('domain', sql.VarChar, domain) // Add the parameter here
-            .execute('sp_checkModelsScores');
-        const models = result.recordset.map(row => ({
-            ModelName: row.ModelName,
-            RankingDifference: row.RankingDifference,
-            count_rank: row.count_rank
-        }));
-        return models;
+  //console.log('domain',domain);
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool
+      .request()
+      .input("domain", sql.VarChar, domain) // Add the parameter here
+      .execute("sp_checkModelsScores");
+    const models = result.recordset.map((row) => ({
+      ModelName: row.ModelName,
+      RankingDifference: row.RankingDifference,
+      count_rank: row.count_rank,
+    }));
+    return models;
+  } catch (err) {
+    console.error("Error in getModelScores DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
-    catch (err) {
-        console.error('Error in getModelScores DBservices --> ', err);
-        throw err;
-    }
-    finally {
-        if (pool) {
-            await pool.close();
-        }
-    }
+  }
 }
 
 export async function getcoherencyBetweenModels(domain) {
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request()
-            .input('domain', sql.VarChar, domain) // Add the parameter here
-            .execute('sp_checkCompatibilityModels');
-        const models = result.recordset.map(row => ({
-            Model1: row.Model1,
-            Model2: row.Model2,
-            AlignmentLevel: row.AlignmentLevel,
-            Count: row.Count,
-            Percentage: row.Percentage
-        }));
-        return transformModelData(models);
-
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool
+      .request()
+      .input("domain", sql.VarChar, domain) // Add the parameter here
+      .execute("sp_checkCompatibilityModels");
+    const models = result.recordset.map((row) => ({
+      Model1: row.Model1,
+      Model2: row.Model2,
+      AlignmentLevel: row.AlignmentLevel,
+      Count: row.Count,
+      Percentage: row.Percentage,
+    }));
+    return transformModelData(models);
+  } catch (err) {
+    console.error("Error in getcoherencyBetweenModels DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
-    catch (err) {
-        console.error('Error in getcoherencyBetweenModels DBservices --> ', err);
-        throw err;
-    }
-    finally {
-        if (pool) {
-            await pool.close();
-        }
-    }
+  }
 }
 
-
-export async function getDetailEachAnswerOfQuestRankCompare(questId,RunId){
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request()
-            .input('QuestId', sql.Int, questId)
-            .input('RunId', sql.NVarChar, RunId) // Add the parameter here
-            .execute('sp_getForEachQuestDetailRankCompare');
-        const res = result.recordset.map(row => ({
-            ID: row.ID,
-            AnswerID: row.AnswerID,
-            HumanRank: row.HumanRank,
-            Score: row.score, // note this is the score before normalization
-            AiRank: row.AiRank,
-            AiExplnation: row.AiExplnation,
-        }));
-        if (res.length !=3 ) {
-            throw new Error(`Error in getDetailEachAnswerOfQuestRankCompare length isnt 3 \n is = ${res.length}  DBservices --> `);
-        }
-        return res;
+export async function getDetailEachAnswerOfQuestRankCompare(questId, RunId) {
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool
+      .request()
+      .input("QuestId", sql.Int, questId)
+      .input("RunId", sql.NVarChar, RunId) // Add the parameter here
+      .execute("sp_getForEachQuestDetailRankCompare");
+    const res = result.recordset.map((row) => ({
+      ID: row.ID,
+      AnswerID: row.AnswerID,
+      HumanRank: row.HumanRank,
+      Score: row.score, // note this is the score before normalization
+      AiRank: row.AiRank,
+      AiExplnation: row.AiExplnation,
+    }));
+    if (res.length != 3) {
+      throw new Error(
+        `Error in getDetailEachAnswerOfQuestRankCompare length isnt 3 \n is = ${res.length}  DBservices --> `
+      );
     }
-    catch (err) {
-        console.error('Error in getDetailEachAnswerOfQuestRankCompare DBservices --> ', err);
-        throw err;
+    return res;
+  } catch (err) {
+    console.error(
+      "Error in getDetailEachAnswerOfQuestRankCompare DBservices --> ",
+      err
+    );
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
-    finally {
-        if (pool) {
-            await pool.close();
-        }
-    }
+  }
 }
-        
 
-
-
-
-
-export async function getAllQuestions(){
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request().execute('spGetAllQuestions');
-        const test = transformQuestionsAndAnswers(result.recordset);
-        //console.log('test',test[4])
-        // const Questions = result.recordset.map(row => ({
-        //     serialNum: row.serialNum,
-        //     Id: row.Id,
-        //     AcceptedAnswerId: row.AcceptedAnswerId,
-        //     CreationDate: row.CreationDate,
-        //     DeletionDate: row.DeletionDate,
-        //     Score: row.Score,
-        //     ViewCount: row.ViewCount,
-        //     Body: row.Body,
-        //     OwnerUserId: row.OwnerUserId,
-        //     OwnerDisplayName: row.OwnerDisplayName,
-        //     LastEditorUserId: row.LastEditorUserId,
-        //     LastEditorDisplayName: row.LastEditorDisplayName,
-        //     LastEditDate: row.LastEditDate,
-        //     LastActivityDate: row.LastActivityDate,
-        //     Title: row.Title,
-        //     Tags: row.Tags,
-        //     AnswerCount: row.AnswerCount,
-        //     CommentCount: row.CommentCount,
-        //     FavoriteCount: row.FavoriteCount,
-        //     ClosedDate: row.ClosedDate,
-        //     CommunityOwnedDate: row.CommunityOwnedDate,
-        //     ContentLicense: row.ContentLicense,
-        //     BatchName: row.BatchName
-        // }));
-        return test;
-
+export async function getAllQuestions() {
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool.request().execute("spGetAllQuestions");
+    const test = transformQuestionsAndAnswers(result.recordset);
+    //console.log('test',test[4])
+    // const Questions = result.recordset.map(row => ({
+    //     serialNum: row.serialNum,
+    //     Id: row.Id,
+    //     AcceptedAnswerId: row.AcceptedAnswerId,
+    //     CreationDate: row.CreationDate,
+    //     DeletionDate: row.DeletionDate,
+    //     Score: row.Score,
+    //     ViewCount: row.ViewCount,
+    //     Body: row.Body,
+    //     OwnerUserId: row.OwnerUserId,
+    //     OwnerDisplayName: row.OwnerDisplayName,
+    //     LastEditorUserId: row.LastEditorUserId,
+    //     LastEditorDisplayName: row.LastEditorDisplayName,
+    //     LastEditDate: row.LastEditDate,
+    //     LastActivityDate: row.LastActivityDate,
+    //     Title: row.Title,
+    //     Tags: row.Tags,
+    //     AnswerCount: row.AnswerCount,
+    //     CommentCount: row.CommentCount,
+    //     FavoriteCount: row.FavoriteCount,
+    //     ClosedDate: row.ClosedDate,
+    //     CommunityOwnedDate: row.CommunityOwnedDate,
+    //     ContentLicense: row.ContentLicense,
+    //     BatchName: row.BatchName
+    // }));
+    return test;
+  } catch (err) {
+    console.error("Error in getAllQuestions DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
-     catch (err) {
-        console.error('Error in getAllQuestions DBservices --> ', err);
-        throw err;
-    } 
-    finally {
-        if (pool) {
-            await pool.close();
-        }
-    }
+  }
 }
 
 export async function InsertPromptToDB(promptObject) {
-    let pool;
-    let transaction;
-    try {
-        pool = await sql.connect(config);
-        console.log('Connected to the database');
+  let pool;
+  let transaction;
+  try {
+    pool = await sql.connect(config);
+    console.log("Connected to the database");
 
-        // Start a transaction
-        transaction = new sql.Transaction(pool);
-        await transaction.begin();
+    // Start a transaction
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
 
-        const request = new sql.Request(transaction);
+    const request = new sql.Request(transaction);
 
-        // Process each object in the array
-        const result = await request
-            .input('PromptTemplate', sql.NVarChar(sql.MAX), promptObject.text)
-            .input('PromptName', sql.NVarChar(55), promptObject.promptName)
-            .input('UserName', sql.NVarChar(55), promptObject.username)
-            .execute('spInsertToPrompt');
+    // Process each object in the array
+    const result = await request
+      .input("PromptTemplate", sql.NVarChar(sql.MAX), promptObject.text)
+      .input("PromptName", sql.NVarChar(55), promptObject.promptName)
+      .input("UserName", sql.NVarChar(55), promptObject.username)
+      .execute("spInsertToPrompt");
 
-        // Commit the transaction
-        await transaction.commit();
-        console.log('All inserts committed successfully - Prompt !');
+    // Commit the transaction
+    await transaction.commit();
+    console.log("All inserts committed successfully - Prompt !");
 
-        // Close the connection
-        await sql.close();
-        
-        return { success: true, message: 'All records inserted successfully',res:result.recordset };
-    } catch (err) {
-        console.error('Database spInsertPrompt operation failed:', err);
-        
-        // If there's an error, roll back the transaction
-        if (transaction) {
-            await transaction.rollback();
-            console.log('Transaction rolled back due to error');
-        }
-        
-        // Make sure to close the connection even if there's an error
-        if (pool) {
-            await sql.close();
-        }
-        
-        throw err;  // Re-throw the error for the caller to handle
+    // Close the connection
+    await sql.close();
+
+    return {
+      success: true,
+      message: "All records inserted successfully",
+      res: result.recordset,
+    };
+  } catch (err) {
+    console.error("Database spInsertPrompt operation failed:", err);
+
+    // If there's an error, roll back the transaction
+    if (transaction) {
+      await transaction.rollback();
+      console.log("Transaction rolled back due to error");
     }
+
+    // Make sure to close the connection even if there's an error
+    if (pool) {
+      await sql.close();
+    }
+
+    throw err; // Re-throw the error for the caller to handle
+  }
 }
 
 export async function getAllPrompts() {
-    let pool;
-    try {
-        pool = await sql.connect(config);
-        const result = await pool.request().execute('spGetAllPrompts');
-        
-        const prompts = result.recordset.map(row => ({
-            PromptID: row.Id,
-            PromptTemplate: row.PromptTemplate,
-            PromptName: row.PromptName,
-            UserName: row.UserName,
-            Date: row.Timestamp
-        }));
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool.request().execute("spGetAllPrompts");
 
-        return prompts;
-    } catch (err) {
-        console.error('Error in getAllPrompts DBservices --> ', err);
-        throw err;
-    } finally {
-        if (pool) {
-            await pool.close();
-        }
+    const prompts = result.recordset.map((row) => ({
+      PromptID: row.Id,
+      PromptTemplate: row.PromptTemplate,
+      PromptName: row.PromptName,
+      UserName: row.UserName,
+      Date: row.Timestamp,
+    }));
+
+    return prompts;
+  } catch (err) {
+    console.error("Error in getAllPrompts DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
     }
+  }
 }
-
-
-
 
 export { executeSpInsertToExecution };
