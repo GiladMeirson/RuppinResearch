@@ -15,6 +15,11 @@ const config = {
     encrypt: true,
     trustServerCertificate: true,
   },
+  pool: {
+    max: 10, // Maximum number of connections in the pool
+    min: 0, // Minimum number of connections in the pool
+    idleTimeoutMillis: 60000, // Close connections after 30 seconds of inactivity
+  },
 };
 
 // Connect to the database
@@ -88,7 +93,7 @@ async function executeSpInsertToExecution(
     console.log("All inserts committed successfully");
 
     // Close the connection
-    await sql.close();
+    //await sql.close();
 
     return {
       success: true,

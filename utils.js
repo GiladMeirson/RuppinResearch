@@ -91,7 +91,12 @@ export const AiSwitcher = (inputText, modelName, temp) => {
   }
 };
 
-export const WriteErrorToErrFile = (err, title = "Error", status = null) => {
+export const WriteErrorToErrFile = (
+  err,
+  title = "Error",
+  status = null,
+  modelDetails = null
+) => {
   try {
     const logsDir = path.join(process.cwd(), "logs");
     const errorFile = path.join(logsDir, "err.txt");
@@ -119,15 +124,27 @@ export const WriteErrorToErrFile = (err, title = "Error", status = null) => {
     } else if (typeof err === "object") {
       errorStatus = err.status || err.statusCode || errorStatus;
       errorMessage = err.message || JSON.stringify(err, null, 2);
-    } else {
+    } else if (err) {
       errorMessage = String(err);
+    }
+
+    // Format model details if provided
+    let modelInfo = "";
+    if (modelDetails) {
+      modelInfo = "\nModel Details:";
+      if (modelDetails.model) {
+        modelInfo += `\nModel Name: ${modelDetails.model}`;
+      }
+      if (modelDetails.runID) {
+        modelInfo += `\nRun ID: ${modelDetails.runID}`;
+      }
     }
 
     const logEntry = `
 ${separator}
 ${timestamp}
 ${title}
-${errorStatus}
+Status: ${errorStatus}${modelInfo}
 ${errorMessage}
 ${separator}
 
