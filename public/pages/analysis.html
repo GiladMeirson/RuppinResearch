@@ -56,6 +56,7 @@
                     <option value="ALL">ALL</option>
                     <option value="so">Stack Overflow</option>
                     <option value="en">English language</option>
+                    <option value="ma">Mathematics</option>
                 </select>
                 <button onclick="getconsistencyModels()" id="btn1"
                     class="send-button">Inner model consistency</button>
@@ -63,6 +64,9 @@
                     class="send-button">WOC coherency</button>
                 <button onclick="getCoherencyBetweenModels()" id="btn3"
                     class="send-button">Inter models coherency</button>
+
+                    <span style="margin-right: 8px;">samples filter  </span>
+                <input type="number" name="" min="1" value="10"  id="samples-filter" class="number-filter">
             </div>
             <div class="container">
                 <div id="subActions">

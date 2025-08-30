@@ -30,9 +30,10 @@ $(document).ready(function () {
   ctx3 = canvas3.getContext("2d");
 });
 
-//inter model
+//inner model
 function getconsistencyModels() {
   $("#loading").show();
+  let samplesFilter = parseInt($("#samples-filter").val());
   let domain = $("#selectDomain").val();
   domain = domain === "ALL" ? "" : domain;
   const data = { domain };
@@ -44,12 +45,18 @@ function getconsistencyModels() {
     contentType: "application/json",
     success: function (response) {
       console.log("AJAX call successful:", response.models);
+      if (samplesFilter && samplesFilter > 1) {
+        response.models = response.models.filter(
+          (element) => element.SamplesCount >= samplesFilter
+        );
+      }
       const labels = response.models.map((element) => element.ModelName);
       const data = response.models.map((element) => element.AveragePercentage);
       const samplesData = response.models.map(
         (element) => element.SamplesCount
       );
       hideCTX();
+      $("#select-model").hide();
       drawbarChart(ctx, labels, data, samplesData);
     },
     error: function (error) {
@@ -66,6 +73,7 @@ function getmodelsScores() {
   domain = domain === "ALL" ? "" : domain;
   const data = { domain };
   hideCTX();
+  $("#select-model").hide();
   $.ajax({
     url: getModelScoresURL,
     method: "POST",
@@ -73,7 +81,7 @@ function getmodelsScores() {
     contentType: "application/json",
     success: function (response) {
       console.log("AJAX call successful:", response.models);
-      const normalizeGroupdData = getpercentageOfScoresModels(response.models);
+      let normalizeGroupdData = getpercentageOfScoresModels(response.models);
       const groupedData = groupByModelName(response.models);
 
       $("#loading").hide();
@@ -83,6 +91,14 @@ function getmodelsScores() {
       ClearContextCTX();
 
       // Create dynamic charts
+      let samplesFilter = parseInt($("#samples-filter").val());
+      if (samplesFilter && samplesFilter > 1) {
+        // Convert object to array of [modelName, data] pairs, filter, then convert back
+        const filteredEntries = Object.entries(normalizeGroupdData).filter(
+          ([modelName, data]) => data.totalSamples >= samplesFilter
+        );
+        normalizeGroupdData = Object.fromEntries(filteredEntries);
+      }
       createDynamicChartsWOC(normalizeGroupdData);
     },
     error: function (error) {
@@ -97,7 +113,7 @@ function createDynamicChartsWOC(normalizeGroupdData) {
   $("#dynamicChartsContainer").empty();
 
   const modelNames = Object.keys(normalizeGroupdData);
-  console.log(normalizeGroupdData);
+  //console.log(normalizeGroupdData);
   $("#myChart").hide();
 
   modelNames.forEach((modelName, index) => {
@@ -132,6 +148,7 @@ function createDynamicChartsWOC(normalizeGroupdData) {
 //inter coherency models
 function getCoherencyBetweenModels() {
   $("#loading").show();
+  $("#select-model").show();
   let domain = $("#selectDomain").val();
   domain = domain === "ALL" ? "" : domain;
   const data = { domain };
@@ -144,21 +161,21 @@ function getCoherencyBetweenModels() {
       console.log("AJAX call successful:", response.models);
       renderModelsToSelect(response.models);
       INTER_MODEL_COHERENCY = response.models;
-      
+
       // First hide all charts and clear contexts
       hideCTX();
       ClearContextCTX();
-      
+
       // Clear the dynamic container
       $("#dynamicChartsContainer").empty();
-      
+
       // Show the container and sub actions
       $(".container").fadeIn();
       $("#subActions").show();
-      
+
       // Explicitly hide myChart after container is shown
       $("#myChart").hide();
-      
+
       $("#loading").hide();
     },
     error: function (error) {
@@ -169,9 +186,12 @@ function getCoherencyBetweenModels() {
 }
 
 const renderBarChartForTwoModels = (modelName) => {
-  const modelData = INTER_MODEL_COHERENCY.filter(
+  const samplesFilter = parseInt($("#samples-filter").val());
+  let modelData = INTER_MODEL_COHERENCY.filter(
     (item) => item.Model1 === modelName || item.Model2 === modelName
   );
+  modelData = modelData.filter((item) => item.TotalCount >= samplesFilter);
+
   if (modelData && modelData.length > 0) {
     console.log("Rendering bar charts for model:", modelName, modelData);
 
@@ -179,7 +199,6 @@ const renderBarChartForTwoModels = (modelName) => {
 
     $("#dynamicChartsContainer").empty().show();
     $(".container").fadeIn();
-    
 
     // Create a bar chart for each model pair
     modelData.forEach((pairData, index) => {
@@ -662,6 +681,7 @@ function generateColors(amount, alpha = 0.5) {
 function getDetails() {
   //console.log('getDetails');
   $("#loading").show();
+  $("#select-model").hide();
   $.ajax({
     url: detailedConsistencyURL,
     method: "GET",

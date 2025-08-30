@@ -646,6 +646,7 @@ function AiAPICall(prompt, isLast, RunId, i) {
       isLast ? location.reload() : null;
     },
     error: function (error) {
+      
       console.error("AJAX call failed:", error);
       $("#loading").hide();
       $("#counterModal").hide();
@@ -654,6 +655,7 @@ function AiAPICall(prompt, isLast, RunId, i) {
         title: error.responseJSON.errorName + " status:" + error.status,
         text: error.responseJSON.error + " \n " + error.responseJSON.message,
       });
+      terminateProccess();
       // Handle the error here
     },
   });
@@ -1071,7 +1073,7 @@ function terminateProccess() {
   $("#loading").hide();
   Swal.fire({
     title: "The process was terminated",
-    text: "The process was terminated by the user",
+    text: "The process was terminated by the user or because an error occurred",
     icon: "info",
     button: "OK",
   });

@@ -1300,7 +1300,8 @@ footer .footerNav {
 }
 
 /* Responsive design */
-@media (max-width: 1400px) { /* Changed from 1200px */
+@media (max-width: 1400px) {
+  /* Changed from 1200px */
   #dynamicChartsContainer {
     grid-template-columns: 1fr; /* Single column on smaller screens */
     gap: 20px;
@@ -1344,3 +1345,54 @@ footer .footerNav {
   position: relative;
 }
 
+.number-filter {
+  padding: 10px 15px;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  background-color: #fff;
+  transition: all 0.3s ease;
+  outline: none;
+  width: 120px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.number-filter:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+  background-color: #f8f9fa;
+}
+
+.number-filter:hover {
+  border-color: #b0b8c1;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the number input arrows/spinners */
+/* .number-filter::-webkit-outer-spin-button,
+.number-filter::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+} */
+
+.number-filter[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Optional: Add a custom label or placeholder styling */
+.number-filter::placeholder {
+  color: #6c757d;
+  font-style: italic;
+}
+
+/* Optional: Add validation states */
+.number-filter:invalid {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.number-filter:valid {
+  border-color: #28a745;
+}

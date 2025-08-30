@@ -114,18 +114,22 @@ export const WriteErrorToErrFile = (
 
     let errorMessage = "";
     let errorStatus = status || "Unknown";
+    let stopReason = "Unknown reason";
 
     // Handle different error types
     if (err instanceof Error) {
       errorMessage = err.message;
+      stopReason = err.message || "Error occurred without specific message";
       if (err.stack) {
         errorMessage += `\nStack trace: ${err.stack}`;
       }
     } else if (typeof err === "object") {
       errorStatus = err.status || err.statusCode || errorStatus;
       errorMessage = err.message || JSON.stringify(err, null, 2);
+      stopReason = err.message || "Error object without message property";
     } else if (err) {
       errorMessage = String(err);
+      stopReason = String(err);
     }
 
     // Format model details if provided
@@ -144,7 +148,9 @@ export const WriteErrorToErrFile = (
 ${separator}
 ${timestamp}
 ${title}
-Status: ${errorStatus}${modelInfo}
+Status: ${errorStatus}
+Running Status: STOPPED
+Stop Reason: ${stopReason}${modelInfo}
 ${errorMessage}
 ${separator}
 
