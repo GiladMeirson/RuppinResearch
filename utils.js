@@ -98,6 +98,11 @@ export const WriteErrorToErrFile = (
   modelDetails = null
 ) => {
   try {
+    // Ensure we always have something to log, even if err is null/undefined
+    if (!err && !title && !status) {
+      err = "Unknown error occurred - no error details provided";
+    }
+
     const logsDir = path.join(process.cwd(), "logs");
     const errorFile = path.join(logsDir, "err.txt");
 
@@ -112,29 +117,35 @@ export const WriteErrorToErrFile = (
       .substring(0, 19);
     const separator = "*".repeat(49);
 
-    let errorMessage = "";
+    let errorMessage = "No error message provided";
     let errorStatus = status || "Unknown";
     let stopReason = "Unknown reason";
 
-    // Handle different error types
+    // Handle different error types with better null/undefined checks
     if (err instanceof Error) {
-      errorMessage = err.message;
+      errorMessage = err.message || "Error instance without message";
       stopReason = err.message || "Error occurred without specific message";
       if (err.stack) {
         errorMessage += `\nStack trace: ${err.stack}`;
       }
-    } else if (typeof err === "object") {
-      errorStatus = err.status || err.statusCode || errorStatus;
-      errorMessage = err.message || JSON.stringify(err, null, 2);
-      stopReason = err.message || "Error object without message property";
-    } else if (err) {
+    } else if (err && typeof err === "object") {
+      errorStatus = status || err.statusCode || err.status || errorStatus;
+      try {
+        errorMessage =
+          err.message || JSON.stringify(err, null, 2) || "Empty error object";
+      } catch (jsonError) {
+        errorMessage = "Error object that cannot be stringified";
+      }
+      stopReason =
+        err.message || err.error || "Error object without message property";
+    } else if (err !== null && err !== undefined) {
       errorMessage = String(err);
       stopReason = String(err);
     }
 
-    // Format model details if provided
+    // Format model details if provided with null checks
     let modelInfo = "";
-    if (modelDetails) {
+    if (modelDetails && typeof modelDetails === "object") {
       modelInfo = "\nModel Details:";
       if (modelDetails.model) {
         modelInfo += `\nModel Name: ${modelDetails.model}`;
@@ -142,12 +153,21 @@ export const WriteErrorToErrFile = (
       if (modelDetails.runID) {
         modelInfo += `\nRun ID: ${modelDetails.runID}`;
       }
+      // Add any other properties that might exist
+      Object.keys(modelDetails).forEach((key) => {
+        if (key !== "model" && key !== "runID" && modelDetails[key]) {
+          modelInfo += `\n${key}: ${modelDetails[key]}`;
+        }
+      });
     }
+
+    // Ensure title is always a string
+    const safeTitle = title || "Error";
 
     const logEntry = `
 ${separator}
 ${timestamp}
-${title}
+${safeTitle}
 Status: ${errorStatus}
 Running Status: STOPPED
 Stop Reason: ${stopReason}${modelInfo}
@@ -156,10 +176,35 @@ ${separator}
 
 `;
 
-    // Append to error log file
-    fs.appendFileSync(errorFile, logEntry, "utf8");
-    console.log(`Error logged to: ${errorFile}`);
+    // Append to error log file with error handling
+    try {
+      fs.appendFileSync(errorFile, logEntry, "utf8");
+      console.log(`Error logged to: ${errorFile}`);
+    } catch (writeError) {
+      // If file write fails, at least log to console
+      console.error("Failed to write to error file:", writeError.message);
+      console.error("Original error that was being logged:", logEntry);
+
+      // Try to write to a backup location
+      try {
+        const backupFile = path.join(process.cwd(), "error_backup.txt");
+        fs.appendFileSync(backupFile, logEntry, "utf8");
+        console.log(`Error logged to backup file: ${backupFile}`);
+      } catch (backupError) {
+        console.error(
+          "Failed to write to backup file as well:",
+          backupError.message
+        );
+      }
+    }
   } catch (logError) {
-    console.error("Failed to write error to log file:", logError);
+    // Ultimate fallback - just log everything to console
+    console.error("Complete failure in WriteErrorToErrFile:", logError);
+    console.error("Original error details:", {
+      err: err,
+      title: title,
+      status: status,
+      modelDetails: modelDetails,
+    });
   }
 };
