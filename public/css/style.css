@@ -1396,3 +1396,10 @@ footer .footerNav {
 .number-filter:valid {
   border-color: #28a745;
 }
+
+
+#sendToLLMBTN:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: #cccccc;
+}

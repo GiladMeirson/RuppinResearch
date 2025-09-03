@@ -13,6 +13,8 @@ const GET_URL_ALL_PROMPT_LIST = prefix + "/getAllPrompt";
 DELAY_REQUEST = 5000; // 5 seconds per request of LLM model to the server.
 
 timeoutIds = [];
+BATCHNAMES = [];
+RUNIDS = [];
 GroupData = [];
 CheckedQuestions = [];
 CurrentJSON_DATA = [];
@@ -46,9 +48,12 @@ $(document).ready(function () {
   footerHtml();
   GetQuestionApiCall();
   getAllPromptList();
+  GetBatchNames();
+  GetAllRunIds();
   username = JSON.parse(localStorage.getItem("user")).username;
   console.log("current username:", username);
   $("#sendToDB").prop("disabled", true);
+  $("#sendToLLMBTN").prop("disabled", true);
 
   //get the score of the executaions from the server.
   //fetchAndProcessExecutionScores();
@@ -106,6 +111,10 @@ $(document).ready(function () {
           $.notify("Please enter a Run ID.", "warn");
           return;
         }
+        if (RUNIDS.includes(RunId)) {
+          $.notify("Invalid Run ID.", "error");
+          return;
+        }
         if (CurrentPromptId == null) {
           $.notify(
             "Please save the prompt before sending the questions.",
@@ -134,6 +143,15 @@ $(document).ready(function () {
       $.notify("Please select a model and at least one question.", "warn");
     }
   });
+  $("#RunIdIN").on("keyup", function () {
+    const RunId = $(this).val();
+    if (!RUNIDS.includes(RunId)) {
+      $("#sendToLLMBTN").prop("disabled", false);
+    }
+    else {
+      $("#sendToLLMBTN").prop("disabled", true);
+    }
+  });
 
   // CSV file upload and send to DB
   $("#sendToDB").on("click", function () {
@@ -159,6 +177,15 @@ $(document).ready(function () {
   $("#confirmBatchID").on("click", function () {
     const batchID = $("#batchIDInput").val();
     if (batchID) {
+      if (BATCHNAMES.includes(batchID)) {
+        // Batch ID is invalid
+        Swal.fire({
+          title: "Invalid Batch ID",
+          text: "The entered Batch ID is invalid because it already exists. Please enter a valid Batch ID.",
+          icon: "error",
+        });
+        return;
+      }
       // Here you would typically send the file and batchID to your backend
       //console.log('Sending file to DB with BatchID:', batchID);
       //console.log('Questions IDs:', CurrentQuestionID_DATA);
@@ -260,7 +287,10 @@ function generateKey(input) {
   }
   strNum = strNum.slice(-6);
   strNum += chars;
-  input.value = strNum;
+  if (!RUNIDS.includes(strNum)) {
+    input.value = strNum;
+    $("#sendToLLMBTN").prop("disabled", false);
+  }
 }
 
 function RendderToConfirmModal(modelName, questionArray) {
@@ -646,7 +676,6 @@ function AiAPICall(prompt, isLast, RunId, i) {
       isLast ? location.reload() : null;
     },
     error: function (error) {
-      
       console.error("AJAX call failed:", error);
       $("#loading").hide();
       $("#counterModal").hide();
@@ -1087,4 +1116,32 @@ const changeListEventHandler = (select) => {
       icon: "warning",
     });
   }
+};
+
+const GetBatchNames = () => {
+  $.ajax({
+    url: "/getAllBatchNames",
+    method: "GET",
+    success: function (data) {
+      BATCHNAMES = data.batchNames;
+      console.log("Batch Names:", BATCHNAMES);
+    },
+    error: function (xhr, status, error) {
+      console.error("Error fetching batch names:", error);
+    },
+  });
+};
+
+const GetAllRunIds = () => {
+  $.ajax({
+    url: "/getAllRunIds",
+    method: "GET",
+    success: function (data) {
+      RUNIDS = data.runIds;
+      console.log("Run IDs:", RUNIDS);
+    },
+    error: function (xhr, status, error) {
+      console.error("Error fetching run IDs:", error);
+    },
+  });
 };

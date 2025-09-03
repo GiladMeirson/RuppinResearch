@@ -558,6 +558,38 @@ export async function getAllQuestions() {
   }
 }
 
+export async function GetAllBatchNames() {
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool.request().execute("sp_GetALLBatchNames");
+    return result.recordset.map((row) => row.BatchName);
+  } catch (err) {
+    console.error("Error in GetAllBatchNames DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
+    }
+  }
+}
+
+export async function GetAllRunIds() {
+  let pool;
+  try {
+    pool = await sql.connect(config);
+    const result = await pool.request().execute("sp_GetALLRunIds");
+    return result.recordset.map((row) => row.RunId);
+  } catch (err) {
+    console.error("Error in GetAllRunIds DBservices --> ", err);
+    throw err;
+  } finally {
+    if (pool) {
+      await pool.close();
+    }
+  }
+}
+
 export async function InsertPromptToDB(promptObject) {
   let pool;
   let transaction;
